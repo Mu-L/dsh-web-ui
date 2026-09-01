@@ -1,22 +1,7 @@
-//#region src/degraded.ts
-const degraded = /* @__PURE__ */ new Map();
-/** Record (or refresh) one plugin's degraded state. Errors are logged here once. */
-function recordDegraded(plugin, stage, error) {
-	const message = error instanceof Error ? error.stack ?? error.message : String(error);
-	console.error(`[dsh-web-all] plugin degraded (${stage}): ${plugin}\n${message}`);
-	degraded.set(plugin, {
-		plugin,
-		stage,
-		message,
-		at: (/* @__PURE__ */ new Date()).toISOString()
-	});
-}
-/** Snapshot of all currently degraded plugins. */
-function listDegraded() {
-	return [...degraded.values()];
-}
-//#endregion
+import { listDegraded, recordDegraded } from "./degraded.js";
 //#region src/shell.ts
+/** Required services: none — the shell must activate before anything else. */
+const inject = [];
 /** Loopback-fenced degraded-state route (installed once per shell context). */
 function makeDegradedRoute() {
 	return {
@@ -45,7 +30,7 @@ function makeDegradedRoute() {
 	};
 }
 /** Apply one shell entry: mount the configured real plugin behind an isolation boundary. */
-async function apply$1(ctx, config) {
+async function apply(ctx, config) {
 	const spec = config?.plugin;
 	if (typeof spec !== "string" || spec === "") throw new Error("dsh-web-all shell: row config is missing the \"plugin\" package name");
 	const disposeRoute = ctx.reflect.get("webServer", false)?.register(makeDegradedRoute());
@@ -73,12 +58,6 @@ async function apply$1(ctx, config) {
 	}
 }
 //#endregion
-//#region src/index.ts
-/** Required services: none — the shell must activate before anything else. */
-const inject = [];
-/** Host plugin body: mount the configured real plugin behind the shell boundary. */
-function apply(ctx, config) {
-	return apply$1(ctx, config);
-}
-//#endregion
 export { apply, inject };
+
+//# sourceMappingURL=shell.js.map
