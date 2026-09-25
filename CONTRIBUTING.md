@@ -76,6 +76,18 @@ pnpm typecheck && pnpm test && pnpm docs:check   # 提交前必过
 
 三个卫星仓（`dsh-skins` / `dsh-pet` / `dsh-community-plugins`）以 git submodule 挂在 `satellites/`，市场构建按各自的 gitlink 固定提交拉取内容。默认不需要检出：要就地改卫星仓内容时才 `git submodule update --init satellites/<仓名>`。该命令把工作树停在 gitlink 固定的提交上（detached HEAD），要提交改动先切到该仓的默认分支：`git -C satellites/<仓名> checkout main`。检出停在该固定提交时 `pnpm market:fetch` 直接复制该工作树；检出离开固定提交（切了分支，或提交了自己的改动）时，默认运行会明确提示并仍按固定提交构建，`pnpm market:fetch --local` 才读取该工作树——这样构建出的 `market/dist` 来自未固定内容，不得提交。
 
+**卫星仓的改动必须在卫星仓提交。** `satellites/<仓名>` 是独立的 git 仓库，
+在本仓写下的文件改动不会被本仓的 `git add` 收走：只 `git add` 本仓会把它们的
+工作树留在 dirty 状态（`git status` 显示 `m satellites/<仓名>`），下次检出/清理
+就可能丢失。改完卫星仓（含随源码一起重新生成的 `lib/`）后：
+
+1. 在卫星仓提交：`git -C satellites/<仓名> add -A && git -C satellites/<仓名> commit`；
+2. 回到本仓把新的 gitlink 一起提交：`git add satellites/<仓名> && git commit`。
+
+两步缺一不可——只提交卫星仓，本仓仍指向旧提交，其他检出与市场构建读到的还是改动前的
+内容；只提交 gitlink 则根本不成立（卫星仓的提交才是被固定的对象）。卫星仓内改动的
+验收与门禁在该仓自己的 CI 跑（见该仓 `AGENTS.md`）。
+
 ## 提交规范
 
 提交信息格式 `type(scope): subject`，type 用 `feat` / `fix` / `chore` /
