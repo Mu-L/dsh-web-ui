@@ -1,5 +1,5 @@
 {
-  "generated": "2026-09-25",
+  "generated": "2026-09-26",
   "items": [
     {
       "id": "dsh-quick-ask",
@@ -1565,6 +1565,31 @@
       "npm": "dsh-attention-health",
       "category": "tools",
       "subcategory": "context"
+    },
+    {
+      "id": "dsh-wx-bridge",
+      "name": "微信接入 DSH",
+      "rank": 123,
+      "nameEn": "WeChat Bridge",
+      "author": "zhy5",
+      "description": "把手机微信接到本机 DSH：自建 iLink 桥 + 常驻 ACP 原生会话（上下文由 DSH 持有、可 resume），手机对话就是桌面工作区里的会话；支持图片识别、直接发文件（Excel / Word / PDF 等，由会话里的 agent 自行解析）与语音转写，带「微信连接」设置面板。准入默认 strict（只服务已登记设备）；权限预设默认 workspace-write，越界的写与提权会先在微信里弹审批卡、可直接在微信内应答，120 秒未应答按拒绝；danger-full-access 现在是需要手动开启的选项。",
+      "descriptionEn": "Bridge WeChat to your local DSH: a self-hosted iLink bridge over a persistent ACP session (context lives in DSH and stays resumable). Phone conversations appear as desktop workspace sessions, with image recognition, file messages (Excel/Word/PDF, parsed by the agent itself) and voice transcripts, plus a settings panel. Access defaults to strict (only registered devices are served); the permission preset defaults to workspace-write, with out-of-workspace writes and privilege escalation surfaced as approvals answerable from WeChat (unanswered after 120s is denied); danger-full-access is now an opt-in.",
+      "repo": "https://github.com/zhy5/dsh-wx-bridge",
+      "npm": "@zmainer/dsh-wx-bridge",
+      "category": "integration",
+      "subcategory": "bridge"
+    },
+    {
+      "id": "agent-body",
+      "name": "Agent-Body 器官化插件层",
+      "rank": 124,
+      "nameEn": "Agent-Body",
+      "author": "1420079678-ctrl",
+      "description": "把 DSH 插件组织成一具身体：插件声明自己是器官（能力 / 感知 / 反射弧），内核补上其余生理机能——按内环境变速的心脏泵血、神经冲动路由、零模型调用的反射弧、静默 2 分钟浅睡 5 分钟深睡的确定性记忆巩固，以及先归因再处置、器官下次成功才闭合伤口的自愈闭环；另含零驻留上下文引擎，把体积大的工具输出驱逐出活动上下文、只留指针，需要时按原样取回。一条命令装齐三个核心器官，其余器官可单独安装。",
+      "descriptionEn": "Organises DSH plugins into a body: the plugins declare themselves organs (capabilities, senses, reflex arcs) and the kernel supplies the rest of the physiology — a heartbeat that changes rate with the internal environment, nerve-impulse routing, reflex arcs that fire with zero model calls, deterministic memory consolidation after 2 minutes of light and 5 minutes of deep sleep, and a self-healing loop that attributes a failure before acting and only closes a wound once the organ succeeds again. It also carries a zero-residence context engine that evicts oversized tool payloads from the live context, keeps pointers, and rebuilds any payload verbatim on demand. One command installs the three core organs; the others install individually.",
+      "repo": "https://github.com/1420079678-ctrl/agent-body",
+      "category": "tools",
+      "subcategory": "dev"
     }
   ]
 }

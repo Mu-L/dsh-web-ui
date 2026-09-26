@@ -1,5 +1,5 @@
 {
-  "generated": "2026-09-25",
+  "generated": "2026-09-26",
   "items": [
     {
       "id": "whale-song",
@@ -535,13 +535,15 @@
         "idol",
         "waveform"
       ],
-      "version": "0.3.0",
+      "version": "0.4.0",
       "accent": "#39c5bb",
       "preview": {
         "light": "assets/skins/miku/preview/light.jpg",
         "dark": "assets/skins/miku/preview/dark.jpg"
       },
       "files": [
+        "README.md",
+        "README.zh.md",
         "assets/miku-art-light.jpg",
         "assets/miku-art.webp",
         "hooks.mjs",
@@ -1754,6 +1756,50 @@
             "scrim": "linear-gradient(180deg, rgba(6,6,8,0.36) 0%, rgba(6,6,8,0.04) 20%, rgba(6,6,8,0.04) 58%, rgba(6,6,8,0.40) 100%), radial-gradient(58% 54% at 72% 54%, rgba(6,6,8,0.44) 0%, rgba(6,6,8,0) 82%), radial-gradient(92% 74% at 16% 4%, rgba(6,6,8,0.10) 0%, rgba(6,6,8,0) 62%)"
           }
         }
+      }
+    },
+    {
+      "id": "claude",
+      "name": "Claude",
+      "nameEn": "Claude",
+      "author": "aklnaaw",
+      "rank": 50,
+      "tagline": "暖米色画布 · 衬线正文 · 珊瑚强调色 —— claude.ai 观感的 DSH 复刻",
+      "description": "以 claude.ai 应用界面为蓝本重建 DSH Web GUI 的观感：暖米色画布 (#faf9f5) 取代冷灰白，正文改用 Newsreader 衬线体，强调色取应用实际的珊瑚橙 (#d97757)，卡片层、发丝边框与圆角阶梯全部按 Claude 的视觉语言重排。深色模式采用 Claude 的暖黑 (#181715) 而非纯黑。字体全部自托管于 assets/fonts/，中文回退到系统 Noto Serif CJK SC。皮肤本身是完整的亮暗双主题；项目主仓库另有两个可选插件（Claude 品牌替换、可交互的 Clawd 像素蟹），需要时见 https://github.com/aklnaaw/dsh-claude-theme",
+      "tags": [
+        "claude",
+        "anthropic",
+        "warm",
+        "cream",
+        "serif",
+        "coral",
+        "light-dark",
+        "editorial"
+      ],
+      "version": "1.0.0",
+      "accent": "#d97757",
+      "preview": {
+        "light": "assets/skins/claude/preview/light.jpg",
+        "dark": "assets/skins/claude/preview/dark.jpg"
+      },
+      "files": [
+        "LICENSE",
+        "README.md",
+        "README.zh.md",
+        "assets/fonts/inter-normal.woff2",
+        "assets/fonts/jetbrains-mono-normal.woff2",
+        "assets/fonts/newsreader-italic.woff2",
+        "assets/fonts/newsreader-normal.woff2",
+        "patches.css",
+        "preview/dark.jpg",
+        "preview/light.jpg",
+        "skin.css",
+        "skin.json"
+      ],
+      "repo": "https://github.com/aklnaaw/dsh-claude-theme",
+      "contributes": {
+        "stylesheet": "skin.css",
+        "patches": "patches.css"
       }
     },
     {

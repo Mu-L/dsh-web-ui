@@ -82,11 +82,15 @@ pnpm typecheck && pnpm test && pnpm docs:check   # 提交前必过
 就可能丢失。改完卫星仓（含随源码一起重新生成的 `lib/`）后：
 
 1. 在卫星仓提交：`git -C satellites/<仓名> add -A && git -C satellites/<仓名> commit`；
-2. 回到本仓把新的 gitlink 一起提交：`git add satellites/<仓名> && git commit`。
+2. **把该提交推到卫星仓的远程**：`git -C satellites/<仓名> push origin main`；
+3. 回到本仓把新的 gitlink 一起提交：`git add satellites/<仓名> && git commit`。
 
-两步缺一不可——只提交卫星仓，本仓仍指向旧提交，其他检出与市场构建读到的还是改动前的
-内容；只提交 gitlink 则根本不成立（卫星仓的提交才是被固定的对象）。卫星仓内改动的
-验收与门禁在该仓自己的 CI 跑（见该仓 `AGENTS.md`）。
+三步缺一不可——只提交卫星仓，本仓仍指向旧提交，其他检出与市场构建读到的还是改动前的
+内容；只提交 gitlink 则根本不成立（卫星仓的提交才是被固定的对象）。漏掉第 2 步最隐蔽：
+本地检出的工作树停在该提交上，`pnpm market:fetch` 直接复制它、构建照常成功，但拉取内容时
+的 tarball 回退只按 SHA 寻址该提交，于是只存在于本地的提交让每一个全新克隆与 CI 的
+`pnpm market:fetch` 得到 `HTTP 404`——移动钉扎的那一次运行成功，掩盖了后续所有运行的失败。
+卫星仓内改动的验收与门禁在该仓自己的 CI 跑（见该仓 `AGENTS.md`）。
 
 ## 提交规范
 
