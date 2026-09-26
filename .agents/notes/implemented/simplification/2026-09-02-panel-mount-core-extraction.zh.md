@@ -8,9 +8,15 @@ dsh-ssh 的 `src/client/mount.tsx` 与 dsh-task-board 的 `src/client/board-moun
 
 ## Decision
 
-接管生命周期现在只存在于 `shared/client/panel-mount-core.ts` 一处：`mountCenterPanel(options)` 拥有中栏选择器、MutationObserver 重挂载、驱逐加激活序列、侧边栏点击退出监听与 disposer 清理顺序；`CenterPanelMountOptions` 契约承载七个按插件变化的参数，外加控制器 subscribe 与可选 locale 源。该文件加入 sync-shared 清单，生成两份同步副本（`packages/dsh-ssh/src/client/panel-mount-core.ts`、`packages/dsh-task-board/src/client/panel-mount-core.ts`）；sync-shared 测试的副本计数桶由 112→114（总数）、41→43（client）。两个包装层缩到只剩参数接线（各约 45 行），公开导出不变（`mountPanel` + `PANEL_VIEW_SELECTOR`、`mountBoard` + `BOARD_VIEW_SELECTOR`），消费方代码与测试零改动。重建的聚合客户端 bundle（`packages/dsh-web-all/lib/client.js`）按源内联，行为一致。
+接管生命周期现在只存在于 `shared/client/panel-mount-core.ts` 一处：`mountCenterPanel(options)` 拥有中栏选择器、MutationObserver 重挂载、驱逐加激活序列、侧边栏点击退出监听与 disposer 清理顺序；`CenterPanelMountOptions` 契约承载七个按插件变化的参数，外加控制器 subscribe 与可选 locale 源。该文件加入 sync-shared 清单，生成一份同步副本（`packages/dsh-ssh/src/client/panel-mount-core.ts`）——任务看板迁到原生布局座位后（见下）唯一的消费方；sync-shared 测试的副本计数桶为总数 98、client 38。dsh-ssh 的包装层只剩参数接线，公开导出不变（`mountPanel` + `PANEL_VIEW_SELECTOR`）。重建的聚合客户端 bundle（`packages/dsh-web-all/lib/client.js`）按源内联，行为一致。
 
-容器属性名保持为包装层传入的参数：它们被各包 CSS（`panel.module.css` / `board.module.css` 互相引用对方兄弟面板的 html 属性）、wallpaper-exclusive 皮肤补丁与语义属性契约钉死，本次提取刻意一个都不改。
+容器属性名保持为包装层传入的参数：它们被该包 CSS（`panel.module.css` 互相引用兄弟面板的 html 属性）、wallpaper-exclusive 皮肤补丁与语义属性契约钉死，本次提取刻意一个都不改。
+
+## 后续变更：任务看板离开接管，改用原生布局座位
+
+任务看板不再消费本核心。它经官方 slots 系统贡献一个 `sidebar.panellist` 行与一个 keyed `main` 页面，并驱动 `ctx.layout.selectPanel`，因此中栏归 shell 所有，看板渲染在桌面版【插件】页所用的同一容器里；DOM 接管、自愈观察器与 `html[data-dsh-taskboard-active]` 可见性契约已从该包移除。见[任务看板原生面板接入](../../architecture/2026-09-25-task-board-native-panel-and-timer.zh.md)。
+
+跨插件互斥**没有**随之消失：dsh-ssh 仍以 DOM 接管中栏，只要 `html[data-dsh-ssh-active]` 在，它的样式就隐藏中栏中其它所有子节点——包括看板页面。因此看板继续参与本文件定义的共享 `dsh-panel-activate` 协议（`PANEL_ACTIVATE_EVENT`，detail 为 `taskboard`/`ssh`），位置在 `packages/dsh-task-board/src/client/native-panel.tsx`：打开看板广播 `taskboard` 让 ssh 交出中栏，收到 `ssh` 广播则关闭看板。这是本核心与看板之间仅存的共享行为，也是事件名与 detail 取值仍属契约、而非 ssh 副本私有细节的原因。
 
 ## Testing
 

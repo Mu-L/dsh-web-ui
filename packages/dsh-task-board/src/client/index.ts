@@ -24,12 +24,11 @@ import type {} from '@deepseek-ai/dsh-client-ui-settings/client'
 // Type-only: pulls the workspace plugin's Context merge (ctx.uiWorkspace), the
 // multi-instance navigation face that replaced ISessions.open().
 import type {} from '@deepseek-ai/dsh-client-ui-workspace/client'
-import { BoardController } from '../core/controller.ts'
+import { BoardController, TASK_BOARD_PANEL_ID } from '../core/controller.ts'
 import { mainViewSessionId } from './main-session.ts'
 import { LocalStorageTaskStore } from '../core/store.ts'
 import { claimTaskboardApply, releaseTaskboardApply } from './apply-guard.ts'
-import { mountBoard } from './board-mount.tsx'
-import { mountSidebarEntry } from './sidebar-entry.ts'
+import { registerTaskBoardPanel } from './native-panel.tsx'
 import { TaskBoardSettingsCard, TaskBoardSettingsCardController, type TaskBoardSettings } from './TaskBoardSettingsCard.tsx'
 import { en, zh, setRuntimeTranslate, type TaskBoardKey } from './locales.ts'
 import { HttpTaskBoardHostTransport } from './host-api.ts'
@@ -124,7 +123,7 @@ declare module '@deepseek-ai/cordis' {
  * on hosts below that cohort, which serve the same roster through the
  * connection RPC face.
  */
-export const inject = ['slots', 'sessions', 'workspaces', 'connection', 'configForms', 'locale', 'remote', 'remote.session', 'uiWorkspace']
+export const inject = ['slots', 'sessions', 'workspaces', 'connection', 'configForms', 'locale', 'remote', 'remote.session', 'uiWorkspace', 'layout']
 
 /** One agent-preset row the mode picker consumes (either face's wire shape). */
 interface PresetRosterRow {
@@ -241,6 +240,18 @@ export function apply(ctx: ClientContext): void {
     const controller = new BoardController({
       store,
       transport: new HttpTaskBoardHostTransport(),
+      // Panel navigation belongs to the layout service: the board asks it to
+      // select its own panel id (or the conversation) instead of taking over
+      // the center column at the DOM level. The lookup stays lazy so a
+      // selection issued before the service settles still lands once it does,
+      // and the face throws by contract before the layout root entry mounts,
+      // which the controller tolerates.
+      panel: {
+        select: panelId => {
+          const layout = ctx.get('layout') as { selectPanel?: (id: string | null) => void } | undefined
+          layout?.selectPanel?.(panelId)
+        },
+      },
       sessions: {
         // The main-view Session comes from the catalog's per-source ownership
         // counts; navigation belongs to the workspace UI since the
@@ -362,12 +373,24 @@ export function apply(ctx: ClientContext): void {
     }
     void pushModelOptions()
     disposers.push(ctx.on('connection/reset', () => { void pushModelOptions() }))
+    // Native panel surfaces: one sidebar row and one center-column page, both
+    // through the official slot seats the shell itself renders. The layout's
+    // panel selection is reconciled back into the controller so the board's own
+    // view state follows the user clicking another panel row.
     try {
-      disposers.push(mountSidebarEntry(controller, ctx.locale))
-      disposers.push(mountBoard(controller, ctx.locale))
+      disposers.push(registerTaskBoardPanel(ctx, controller))
+      const layoutFace = ctx.get('layout') as { panelInfo?: { subscribe(listener: () => void): () => void; getSnapshot(): { activePanelId: unknown } } } | undefined
+      if (layoutFace?.panelInfo !== undefined) {
+        const sync = (): void => {
+          const active = layoutFace.panelInfo!.getSnapshot().activePanelId
+          controller.syncPanelSelection(active === TASK_BOARD_PANEL_ID ? TASK_BOARD_PANEL_ID : null)
+        }
+        sync()
+        disposers.push(layoutFace.panelInfo.subscribe(sync))
+      }
     } catch (error) {
-      // DOM failures degrade the board, never the GUI.
-      console.error('[dsh-task-board] mount failed:', error)
+      // A shell that cannot serve the seats degrades the board, never the GUI.
+      console.error('[dsh-task-board] panel registration failed:', error)
     }
 
     uiDisposer = () => {

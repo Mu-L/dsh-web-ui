@@ -18,8 +18,13 @@ const ROOT = dirname(dirname(fileURLToPath(import.meta.url)))
  * 0.1.7-alpha.1: it is the ui-workspace row of dsh-web-app and the provider
  * of the ctx.uiWorkspace service that replaced ISessions.open(), so the
  * plugins that navigate the main view depend on its client half being
- * loaded. A rename, removal, or new inject name must update this list
- * together with its runtime-module-table evidence.
+ * loaded. dsh-client-ui-layout joined with the task board's native panel
+ * adoption: it is the ui-layout row of dsh-web-app and the owner of the keyed
+ * `main` seat plus the ctx.layout panel-navigation service the board selects
+ * its page through, so the row must be live before the board can contribute
+ * (the board's own registrations wait on the seat declaration either way).
+ * A rename, removal, or new inject name must update this list together with
+ * its runtime-module-table evidence.
  */
 const APPROVED_INJECT_MODULES = [
   '@deepseek-ai/dsh-api-remotes',
@@ -29,6 +34,7 @@ const APPROVED_INJECT_MODULES = [
   '@deepseek-ai/dsh-client-locale',
   '@deepseek-ai/dsh-client-store',
   '@deepseek-ai/dsh-client-ui-conversation',
+  '@deepseek-ai/dsh-client-ui-layout',
   '@deepseek-ai/dsh-client-ui-renderer',
   '@deepseek-ai/dsh-client-ui-settings',
   '@deepseek-ai/dsh-client-ui-sidebar',

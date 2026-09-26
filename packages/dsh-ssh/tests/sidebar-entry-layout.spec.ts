@@ -4,11 +4,12 @@ import { describe, expect, it } from 'vitest'
 const css = readFileSync(new URL('../src/client/panel/panel.module.css', import.meta.url), 'utf8')
 const source = readFileSync(new URL('../src/client/sidebar-entry.ts', import.meta.url), 'utf8')
 
-// The three sidebar entry rows of this repository (ssh, task board, skill
-// explorer) must share one geometry baseline copied from the shell's own
-// panel rows; the board spec owns the full cross-package sweep (#1535).
+// The hand-drawn sidebar entry rows of this repository (ssh, skill explorer)
+// must share one geometry baseline copied from the shell's own panel rows
+// (#1535). The task board used to be the third; it contributes a
+// `sidebar.panellist` row now, so the shell draws its box and there is no
+// geometry of ours left to compare.
 const siblingEntryGaps = [
-  new URL('../../dsh-task-board/src/client/board.module.css', import.meta.url),
   new URL('../../dsh-skill-explorer/src/client/skill-panel.module.css', import.meta.url),
 ].map((url) => ({
   path: url.pathname.split('/packages/')[1] ?? url.pathname,

@@ -1,14 +1,17 @@
 /**
  * Center-column panel takeover lifecycle.
  *
- * The `conversation` slot is single-occupant (ui-conversation) and external
- * plugins cannot declare slots, so a family panel takes over the center
- * column at the DOM level: a container is appended inside the center column
- * (`[class*="centerCol"]`, the 0.1.0-rc.6+ AppFrame layout; previously
- * `[data-pane="conversation"]` on older shells — the mount selector keeps
- * both, ssh #243 / task-board #107) as an extra trailing child React never
- * manages, and a stylesheet rule hides the conversation content while the
- * panel is active. Toggling is a data attribute on <html> — no React
+ * dsh-ssh takes over the center column at the DOM level: a container is
+ * appended inside the center column (`[class*="centerCol"]`, the 0.1.0-rc.6+
+ * AppFrame layout; previously `[data-pane="conversation"]` on older shells —
+ * the mount selector keeps both, ssh #243 / task-board #107) as an extra
+ * trailing child React never manages, and a stylesheet rule hides the
+ * conversation content while the panel is active. The task board used to share
+ * this: it now contributes a keyed `main` page and a `sidebar.panellist` row
+ * through the official slots system, so the shell owns its column. The shared
+ * `dsh-panel-activate` event below stays a contract because the board still
+ * participates in it to hand the column over to, and take it back from, this
+ * takeover. Toggling is a data attribute on <html> — no React
  * involvement, so the conversation subtree underneath stays mounted and
  * stateful.
  *
@@ -21,7 +24,7 @@
 import { createRoot, type Root } from 'react-dom/client'
 import { subscribeBodyInvalidations } from './body-mutations.ts'
 
-/** Options for mountCenterPanel; dsh-ssh mount.tsx and dsh-task-board board-mount.tsx are the canonical consumers. */
+/** Options for mountCenterPanel; dsh-ssh mount.tsx is the consumer since the task board moved to the native layout seats. */
 export interface CenterPanelMountOptions {
   /** Render the panel tree (first open, remount while open, locale refresh). */
   render: (root: Root) => void

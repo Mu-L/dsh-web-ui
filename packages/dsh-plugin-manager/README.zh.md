@@ -2,23 +2,15 @@
 
 [English](README.md) | 中文
 
-面向 dsh web GUI「插件」设置分区的更新与修复 Tab：只保留官方插件管理页不负责的部分——更新检查与 DSH 运行时兼容门禁、host 记录的安装冲突对账（可撤销、可转交修复）、启动失败环与安全模式横幅——插件清单以只读方式呈现。安装、卸载与启停自 0.1.7-alpha.1 起由官方页面负责。
+面向 dsh web GUI 官方「插件」面板的更新检查：把官方插件管理页唯一没有的能力——已装插件与其 registry 来源的版本比对，以及 DSH 运行时兼容门禁——作为该页面内的一个区块渲染。安装、卸载与启停由官方页面负责（面板归它所有）；本包此前在该分区另注册一个「插件管理」Tab，现已移除。
 
 ## 功能
 
-- 在官方「插件」设置分区注册「插件管理」Tab（`settings.plugins.tab` 槽位，order 20，与官方安装器 Tab 并列）。
+- 向官方插件页注入「检查更新」区块（该页声明的 `plugins.detail.section` 席位），只渲染在已安装组合包的页面上；「插件」设置分区不再有本包自己的 Tab。
 - 双通道传输：带官方安装器服务的运行时（DSHCode 与 1.0.4 checkout 版 web）走官方 `/plugin-installer`、`/plugin-control` loopback RPC 通道；npm 发布的官方 web 没有这些通道，本包的 host 半区挂载 loopback 门禁的 HTTP 网关——安装/卸载 spawn 官方 `dsh plugin` CLI（唯一写入器），启停写入 `disabled` 覆盖行。
-- 清单只读呈现，并指向官方插件管理页（侧边栏「插件」）执行安装、卸载与启停；官方页面的改动实时生效。
-- 列出已装用户插件：名称、版本、来源徽标与生效状态，并提供更新检查（npm 源走 registry）与已核验的 npm 更新。
-- 聚合包行仍可读：`@linxin666/dsh-web-all` 等声明多条入口行的聚合包展开为子行列表，逐个显示家族插件的生效状态，锁定行有标注；这些行的开关在官方页面上。
-- 聚合包子插件列表默认收起：行上只显示「子插件 N/M 已启用」摘要，点击展开，携带 20+ 家族行的全家桶不再把设置页拉长。
 - 检测旧聚合包 `@linxin666/dsh-web-ui-all`，把更新动作转换为到 `@linxin666/dsh-web-all` 的事务迁移；网关先移除旧包、安装精确版本的新包、恢复旧聚合包的层顺序，并在 `--dump-config` 通过后才报告成功。
-- 更新前校验 DSH 运行时兼容（issue #754）：更新检查读取最新版本清单声明的 DSH 最低版本（`dsh.engines.dsh`，兼容回退读顶层 `engines.dsh`），在更新按钮旁显示要求，运行 DSH 低于要求时禁用按钮；host 更新路由在启动任何 CLI 任务前若无法核实时也会返回 412 并拒绝。
-- 官方 plugin-control 面存在时展示内置产品行及其生效状态；切换在官方页面上进行。
-- 冲突对账：host 记录本包网关通道上最近一次安装/更新的层变化；官方通道上则对本次 Tab 执行的更新做产品快照前后 diff。可撤销的动作给一键撤销，每条冲突都给「让 Agent 修复」转交。
-- 按插件渲染启动失败环：「让 Agent 修复」（以插件安装根为工作区的修复会话）与「复制错误」。
-- 显示宿主安全模式横幅与「恢复正常模式」操作（web 端在下次手动重启时生效）。
-- npm 运行时保护下次启动：安装后网关校验依赖真实落盘、拒绝重复入口 id 认领与引用不可解析包的 insert 行，并用 CLI 的 `--dump-config` 做组合预检；冲突或失败的安装会经官方 remove 路径自动回滚（绝不触碰现有插件），错误行带修复转交。
+- 更新前校验 DSH 运行时兼容（issue #754）：更新检查读取最新版本清单声明的 DSH 最低版本（`dsh.engines.dsh`，兼容回退读顶层 `engines.dsh`），在更新动作旁显示要求，运行 DSH 低于要求时禁用它；host 更新路由在启动任何 CLI 任务前若无法核实时也会返回 412 并拒绝。
+- npm 运行时保护下次启动：安装后网关校验依赖真实落盘、拒绝重复入口 id 认领与引用不可解析包的 insert 行，并用 CLI 的 `--dump-config` 做组合预检；冲突或失败的安装会经官方 remove 路径自动回滚，绝不触碰现有插件。
 
 ## 安装
 
@@ -37,11 +29,11 @@ pnpm install && pnpm -r build
 dsh plugin --profile web add link:$(pwd)/packages/dsh-plugin-manager
 ```
 
-重启 `dsh web` 后，设置页「插件」分区出现该 Tab。
+重启 `dsh web` 后，官方「插件」面板中的组合包页面出现该更新区块。
 
 ## 配置
 
-本 Tab 不携带配置命名空间。更新与冲突撤销的写入在下次重启后生效。
+本包不携带配置命名空间。更新的写入在下次重启后生效。
 
 ## cordis 服务
 
@@ -56,21 +48,19 @@ dsh plugin --profile web add link:$(pwd)/packages/dsh-plugin-manager
 - `setEnabled(id, enabled): Promise<InstalledPluginItem>` — 经当前通道（官方安装器 RPC，或网关写 profile patch 的 `disabled` 行）翻转插件的下次启动启用状态；宿主重启后生效。
 - `onChange(cb): () => void` — 订阅成功变更；`install()`、`update()`、`uninstall()`、`setEnabled()` 任一成功 resolve 后触发，返回退订函数。
 
-契约事实源在 `src/core/service.ts`（`PluginManagerService`）。服务随插件生命周期提供，插件卸载即消失。服务与「插件管理」Tab 共享同一个 face，因此 `onChange` 订阅者对两侧发起的变更都能收到通知。
+契约事实源在 `src/core/service.ts`（`PluginManagerService`）。服务随插件生命周期提供，插件卸载即消失。服务与更新区块共享同一个 face，因此 `onChange` 订阅者观察到的是同一批变更。
 
 ## 已知限制
 
-- 仅限本机：LAN 或远程浏览器只显示「仅限本机操作」提示（与官方安装器 Tab 同一边界；网关对非 loopback 请求返回 403）。
+- 仅限本机：LAN 或远程浏览器只显示「仅限本机操作」提示（与官方安装器页同一边界；网关对非 loopback 请求返回 403）。
 - npm 发布的官方 web 上，网关写入经官方 CLI 执行。网关先从 host 进程 PATH 解析 `dsh`，再从运行中 host 入口上层各项目根的 `node_modules/.bin` 回退查找，最后回退到运行中 host 包自身的 `lib/bin.js`——覆盖本地包装器与 npx 启动，以及桌面安装包运行时（CLI 与 host 进程同处一树，且安装包会剥除所有 `.bin` shim 目录）；解析到的 `bin.js` 由 host 自身的 Node 解释器执行。全部来源都没有 CLI 时才不可写。CLI 输出按字节一次性解码，Windows 中文控制台（CP936/GBK）的报错文本可读而不再是替换字符。git 源安装可能耗时数分钟，以后台任务运行。网关更新只适用于 npm registry 源，由 host 解析最新版本，且仅当同一已装包报告该精确版本时才算成功。
 - 兼容性门禁只在目标清单声明了最低 DSH 版本时生效；未声明 `dsh.engines.dsh` 的包更新不被检查，官方安装器运行时（DSHCode 与 checkout 版 web）不经过本门禁（其更新走官方安装器）。
-- npm 发布的官方 web 没有启动失败环与安全模式：这两处界面降级为空，只有安装错误提供修复转交。
 - npm 运行时上的启停显示下次启动的真实生效值：profile 覆盖行优先，其次由所装 bundle 自带的 `disabled` 行决定（聚合包的按需开启家族），两层都未提及的行视为启用。开启一个被 bundle 停用的行会写入显式 `disabled: false` 覆盖行——只删除用户行只会退回 bundle 默认值；该运行时 loader 在下次启动时认读这些行，但这条路径不如官方桌面写入器经过充分锻炼。
 - web 端无壳内重启：变更在下次手动重启后生效。
-- 安装时冲突检测报告安装实际改了什么（官方模式为产品行；网关模式为 profile 行与 bundle 条目）。npm 运行时上重复 insert id 认领在安装后即被检出并自动回滚新插件（共享 id 写 disabled 无法阻止 loader 的重复检查，只会误伤现有插件）；官方运行时由官方规则与失败环处置该类冲突。
-- npm 运行时的启动预检（`--dump-config`）能抓组合失败，静态 insert 检查能抓引用不存在包的 insert 行；真正的运行时 import/apply 失败仍要到下次启动才暴露，官方运行时靠失败环呈现，npm 运行时没有失败环。
+- npm 运行时上重复 insert id 认领在安装后即被检出并自动回滚新插件（共享 id 写 disabled 无法阻止 loader 的重复检查，只会误伤现有插件）。
+- npm 运行时的启动预检（`--dump-config`）能抓组合失败，静态 insert 检查能抓引用不存在包的 insert 行；真正的运行时 import/apply 失败仍要到下次启动才暴露。
 - 重复挂载保护（网关模式）：官方 CLI 的 bundle 对账会在任何安装/卸载后把所有声明 `dsh.bundle` 的依赖重新加进 `dsh.profile.bundles`——包括组合树里已由 patch 行挂载的包（bundle 以 patch 行挂载外部插件时），下次启动会重复挂载而失败（`duplicate prefix route`）。每次 CLI 变更成功后，网关只把「本次新增且已被 patch 行挂载」的 bundles 条目剥除（清单写入走备份 + tmp + 原子 rename），并在任务结果上为每个被剥除的条目发一条 notice；正常安装的 bundles 条目与用户此前已有的条目一律不动。
-- wire 形状镜像官方安装器 Tab 协议；漂移时宽容解析器降级为错误行，不误操作。
-- 修复会话工作区保留路径派生的默认标题。
+- wire 形状镜像官方安装器协议；漂移时宽容解析器降级为错误行，不误操作。
 
 ## 安全模型
 
@@ -81,7 +71,8 @@ dsh plugin --profile web add link:$(pwd)/packages/dsh-plugin-manager
 - 启停操作会在该变更队列内重新读取最新 profile 清单，并在写入前以 `404` 拒绝过期或未知的包 id，因此卸载后遗留在面板里的旧行不会制造孤儿 `disabled` 覆盖。
 - 冲突处置是 owner-aware 的：重复入口 id 或引用不可解析包的 insert 行会经官方 remove 路径回滚**新**包；网关绝不对共享 id 写 `disabled` 行（那既阻止不了 loader 的重复检查，又会误伤现有插件）。
 - 启动预检（`--dump-config`）只组合 patch 层、不 import 条目：能抓组合失败，抓不到 import 期失败——后者仍在首次真实启动时暴露。
-- profile 名（来自 `--profile` / `DSH_PROFILE`）在任何文件读写前做路径穿越校验；patch 写入走备份 + tmp + 原子 rename（`cordis.patch.yml.bak-plugin-manager`）。
+- 启动 profile 的解析顺序为 `--profile`、宿主在 `profileContext` 上发布的启动 profile、打包启动器 argv 中按位置携带的 profile 目录（Electron 会剥掉 exec 开关，桌面宿主因此按位置拿到 profile 目录）、`DSH_PROFILE`、`web` 子命令、打包应用持久化的选择。已发布 profile 优先于环境变量：打包桌面端两者都不传，而全局 `DSH_PROFILE` workaround 可能指向运行中宿主根本不读的 profile。
+- 宿主发布的启动 profile 属外来输入：其名称做路径穿越校验，其目录必须是绝对且不含穿越的路径，其 patch 路径只有等于该 profile 自己的 `cordis.patch.yml` 时才被接受——patch 路径是写入目标。patch 写入走备份 + tmp + 原子 rename（`cordis.patch.yml.bak-plugin-manager`）。
 - 重复挂载保护只写 profile 清单的 `dsh.profile.bundles`，与 patch 写入同一纪律（备份 + tmp + 原子 rename，备份为 `package.json.bak-plugin-manager`）；只移除 CLI 刚加入且与既有 patch 行挂载重复的条目；保护写回失败会让任务显式失败，绝不静默留下破坏下次启动的状态。
 
 ## 数据遥测

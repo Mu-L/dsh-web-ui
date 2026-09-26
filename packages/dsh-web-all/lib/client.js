@@ -41,8 +41,8 @@ window.__ModuleLoader__.load({
 		let react = require("react");
 		react = __toESM(react, 1);
 		let _deepseek_ai_dsh_client_ui_primitives = require("@deepseek-ai/dsh-client-ui-primitives");
-		let react_dom_client = require("react-dom/client");
 		let react_dom = require("react-dom");
+		let react_dom_client = require("react-dom/client");
 		//#region \0dsh-store-engine
 		const platform = ["@deepseek-ai/dsh-client", "-store"].join("");
 		const legacy = ["@deepseek-ai/dsh-client-runtime", "/client"].join("");
@@ -804,105 +804,6 @@ window.__ModuleLoader__.load({
 			});
 		}
 		//#endregion
-		//#region ../dsh-plugin-manager/src/core/conflict.ts
-		/**
-		* Diff two plugin-control snapshots by id. Only entries present in both
-		* snapshots with a changed state are reported; entries appearing or
-		* disappearing are ordinary install/uninstall outcomes, not conflicts.
-		* @param before - snapshot taken before the install.
-		* @param after - snapshot taken after the install.
-		* @returns one change per id whose state moved, in id order.
-		*/
-		function diffControls(before, after) {
-			const afterById = new Map(after.map((item) => [item.id, item]));
-			const changes = [];
-			for (const item of before) {
-				const current = afterById.get(item.id);
-				if (current === void 0 || current.state === item.state) continue;
-				changes.push({
-					id: item.id,
-					name: item.name,
-					from: item.state,
-					to: current.state
-				});
-			}
-			return changes;
-		}
-		/**
-		* Classify one control-state change for messaging. A change into `disabled`
-		* is the conflict rule's action (reversible by re-enabling); a change out of
-		* `disabled` is a manual undo; anything else is reported neutrally.
-		* @param change - one diff entry.
-		* @returns the message kind.
-		*/
-		function classifyChange(change) {
-			if (change.to === "disabled") return "rule-disabled";
-			if (change.from === "disabled") return "rule-enabled";
-			return "state-change";
-		}
-		//#endregion
-		//#region ../dsh-plugin-manager/src/core/repair.ts
-		/** Default copy (zh): the package's zh dictionary keys map onto these strings. */
-		const DEFAULT_REPAIR_COPY = {
-			failureTitle: "正在修复插件启动失败",
-			failurePluginLabel: "插件",
-			failureKindLabel: "失败类型",
-			failureAtLabel: "时间",
-			failureMessageLabel: "错误信息",
-			failureStackLabel: "堆栈",
-			failurePathLabel: "安装路径",
-			failureAsk: "请修复插件后重新启用并重启 dsh web。",
-			conflictTitle: "正在处理插件安装冲突",
-			conflictPluginLabel: "冲突条目",
-			conflictChangeLabel: "状态变化",
-			conflictAsk: "请检查冲突双方的入口行 id 与挂载方式，消除重复挂载后告诉我如何重新启用。",
-			kindNames: {
-				"load-failure": "加载失败",
-				hang: "启动挂起",
-				"late-rejection": "迟到拒绝"
-			},
-			stateNames: {
-				enabled: "已开启",
-				disabled: "已关闭",
-				uninstalled: "已卸载"
-			}
-		};
-		/**
-		* Seed text for one boot-failure ring row: the failure record, so the agent
-		* can attribute and fix it in place.
-		* @param failure - the recorded failure row.
-		* @param copy - localized fragments.
-		* @returns the repair prompt text.
-		*/
-		function failureRepairMessage(failure, copy = DEFAULT_REPAIR_COPY) {
-			const parts = [
-				copy.failureTitle,
-				`${copy.failurePluginLabel}: ${failure.pluginId || "-"}`,
-				`${copy.failureKindLabel}: ${copy.kindNames[failure.kind] ?? failure.kind}`,
-				`${copy.failureAtLabel}: ${failure.at}`,
-				`${copy.failureMessageLabel}:\n${failure.message}`
-			];
-			if (failure.stack !== "") parts.push(`${copy.failureStackLabel}:\n${failure.stack}`);
-			if (failure.installPath !== "") parts.push(`${copy.failurePathLabel}: ${failure.installPath}`);
-			parts.push(copy.failureAsk);
-			return parts.join("\n\n");
-		}
-		/**
-		* Seed text for one install-conflict notice: the entry and its state change,
-		* so the agent can attribute the conflict and resolve the double mount.
-		* @param change - the conflict change (id, display name, from/to states).
-		* @param copy - localized fragments.
-		* @returns the repair prompt text.
-		*/
-		function conflictRepairMessage(change, copy = DEFAULT_REPAIR_COPY) {
-			return [
-				copy.conflictTitle,
-				`${copy.conflictPluginLabel}: ${change.name} (${change.id})`,
-				`${copy.conflictChangeLabel}: ${copy.stateNames[change.from] ?? change.from} -> ${copy.stateNames[change.to] ?? change.to}`,
-				copy.conflictAsk
-			].join("\n\n");
-		}
-		//#endregion
 		//#region ../dsh-plugin-manager/src/core/version.ts
 		const MINIMUM_RANGE_PATTERN = /^>=\s*(v?\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)$/;
 		/**
@@ -919,7 +820,7 @@ window.__ModuleLoader__.load({
 		}
 		//#endregion
 		//#region \0dsh-css:packages/dsh-plugin-manager/src/client/plugin-manager.module.css.mjs
-		const css$15 = ".ZsMDKq_section{flex-direction:column;gap:12px;display:flex}.ZsMDKq_notice{border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);border-radius:8px;flex-direction:column;gap:8px;padding:16px;display:flex}.ZsMDKq_notice p{color:var(--dsw-alias-label-secondary);margin:0}.ZsMDKq_state{color:var(--dsw-alias-label-secondary);padding:16px 0}.ZsMDKq_hint{color:var(--dsw-alias-label-tertiary);margin:0;font-size:12px}.ZsMDKq_progressRow{flex-direction:column;gap:6px;display:flex}.ZsMDKq_progressTrack{background:var(--dsw-alias-bg-layer-2);border-radius:3px;height:6px;overflow:hidden}.ZsMDKq_progressBar{background:var(--dsw-alias-state-business-primary);height:100%;transition:width .2s}.ZsMDKq_progressBar[data-indeterminate=true]{width:40%;animation:1.2s ease-in-out infinite ZsMDKq_pluginManagerIndeterminate}@keyframes ZsMDKq_pluginManagerIndeterminate{0%{transform:translate(-100%)}to{transform:translate(250%)}}.ZsMDKq_progressLabel{color:var(--dsw-alias-label-tertiary);margin:0;font-size:12px}@media (prefers-reduced-motion:reduce){.ZsMDKq_progressBar[data-indeterminate=true]{width:40%;animation:none}}.ZsMDKq_errorRow{border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-danger);border-radius:8px;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 12px;display:flex}.ZsMDKq_error{min-width:200px;color:var(--dsw-alias-label-danger);word-break:break-all;flex:1}.ZsMDKq_group{flex-direction:column;gap:8px;display:flex}.ZsMDKq_sectionTitle{color:var(--dsw-alias-label-secondary);margin:0;font-size:13px;font-weight:600}.ZsMDKq_list{flex-direction:column;gap:8px;margin:0;padding:0;list-style:none;display:flex}.ZsMDKq_row{border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);border-radius:8px;justify-content:space-between;align-items:flex-start;gap:12px;padding:10px 12px;display:flex}.ZsMDKq_meta{flex-direction:column;gap:4px;min-width:0;display:flex}.ZsMDKq_name{color:var(--dsw-alias-label-primary);text-overflow:ellipsis;white-space:nowrap;font-weight:600;overflow:hidden}.ZsMDKq_sub{color:var(--dsw-alias-label-tertiary);flex-wrap:wrap;align-items:center;gap:6px;min-width:0;font-size:12px;display:flex}.ZsMDKq_version{white-space:nowrap}.ZsMDKq_sourceBadge{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);border-radius:4px;padding:0 4px;font-size:11px}.ZsMDKq_specText{text-overflow:ellipsis;white-space:nowrap;max-width:320px;overflow:hidden}.ZsMDKq_latest{color:var(--dsw-alias-state-business-primary);font-size:12px}.ZsMDKq_compatHint{color:var(--dsw-alias-label-tertiary);font-size:12px}.ZsMDKq_compatBlocked{color:var(--dsw-alias-label-danger);font-size:12px}.ZsMDKq_actions{flex-shrink:0;align-items:center;gap:8px;display:flex}.ZsMDKq_empty{color:var(--dsw-alias-label-tertiary);margin:0}.ZsMDKq_link{color:var(--dsw-alias-state-business-primary)}.ZsMDKq_stateLabel{color:var(--dsw-alias-label-secondary);font-size:12px}.ZsMDKq_stateLabel[data-state=enabled]{color:var(--dsw-alias-state-success-primary)}.ZsMDKq_stateLabel[data-state=disabled]{color:var(--dsw-alias-label-tertiary)}.ZsMDKq_stateLabel[data-state=mixed]{color:var(--dsw-alias-state-warning-primary,var(--dsw-alias-label-secondary))}.ZsMDKq_childrenToggle{width:100%;color:var(--dsw-alias-label-secondary);text-align:left;cursor:pointer;background:0 0;border:none;border-radius:6px;align-items:center;gap:6px;margin:6px 0 0;padding:4px 8px;font-size:12px;display:flex}.ZsMDKq_childrenToggle:hover{background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary)}.ZsMDKq_childrenToggle:focus-visible{outline:2px solid var(--dsw-alias-border-l2);outline-offset:1px}.ZsMDKq_chevron{border-top:4px solid #0000;border-bottom:4px solid #0000;border-left:5px solid;flex:none;width:0;height:0;transition:transform .15s}.ZsMDKq_chevron[data-expanded=true]{transform:rotate(90deg)}@media (prefers-reduced-motion:reduce){.ZsMDKq_chevron{transition:none}}.ZsMDKq_childrenSummary{text-overflow:ellipsis;white-space:nowrap;min-width:0;overflow:hidden}.ZsMDKq_childList{border-left:2px solid var(--dsw-alias-border-l1);flex-direction:column;gap:4px;margin:6px 0 0;padding:2px 0 2px 16px;list-style:none;display:flex}.ZsMDKq_childRow{justify-content:space-between;align-items:center;gap:12px;padding:4px 8px;display:flex}.ZsMDKq_childName{color:var(--dsw-alias-label-primary);text-overflow:ellipsis;white-space:nowrap;min-width:0;font-size:13px;overflow:hidden}.ZsMDKq_lockedHint{color:var(--dsw-alias-label-tertiary);font-size:12px}.ZsMDKq_failure{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-danger);border-radius:6px;flex-direction:column;gap:6px;margin-top:4px;padding:8px;display:flex}.ZsMDKq_badge{background:var(--dsw-alias-label-danger);color:var(--dsw-alias-label-on-danger);border-radius:10px;align-self:flex-start;padding:2px 8px;font-size:11px}.ZsMDKq_failureMessage{color:var(--dsw-alias-label-danger);word-break:break-all;font-size:12px}.ZsMDKq_failureActions{flex-wrap:wrap;gap:8px;display:flex}.ZsMDKq_conflicts{flex-direction:column;gap:8px;display:flex}.ZsMDKq_actionsRow{align-items:center;gap:12px;display:flex}.ZsMDKq_ok{color:var(--dsw-alias-state-success-primary);margin:0;font-size:12px}.ZsMDKq_applying{color:var(--dsw-alias-label-tertiary);margin:0;font-size:12px}.ZsMDKq_restartRow{border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-brand);border-radius:8px;padding:10px 12px}.ZsMDKq_restartRow p{color:var(--dsw-alias-brand-primary);margin:0}.ZsMDKq_safeModeBanner{border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-warning);border-radius:8px;justify-content:space-between;align-items:center;gap:12px;padding:10px 12px;display:flex}.ZsMDKq_safeModeBanner p{color:var(--dsw-alias-label-primary);margin:0}";
+		const css$15 = ".ZsMDKq_section{max-width:760px;color:var(--dsw-alias-label-primary);flex-direction:column;gap:10px;display:flex}.ZsMDKq_title{margin:0;font-size:13px;font-weight:600;line-height:20px}.ZsMDKq_notice{border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);border-radius:8px;flex-direction:column;gap:8px;padding:16px;display:flex}.ZsMDKq_notice p{color:var(--dsw-alias-label-secondary);margin:0}.ZsMDKq_hint{color:var(--dsw-alias-label-tertiary);margin:0;font-size:12px}.ZsMDKq_actionRow{flex-wrap:wrap;align-items:center;gap:10px;display:flex}.ZsMDKq_button{font:inherit;cursor:pointer;border:1px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm,6px);color:var(--dsw-alias-label-primary);background:0 0;padding:5px 12px;font-size:12.5px;line-height:18px}.ZsMDKq_button:hover:enabled{background:var(--dsw-alias-interactive-bg-hover)}.ZsMDKq_button:disabled{cursor:default;opacity:.55}.ZsMDKq_button:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}.ZsMDKq_primary{color:var(--dsw-alias-label-primary-foreground);background:var(--dsw-alias-button-primary-fill);border-color:var(--dsw-alias-button-primary-fill)}.ZsMDKq_primary:hover:enabled{background:var(--dsw-alias-button-primary-hover);border-color:var(--dsw-alias-button-primary-hover)}.ZsMDKq_latest{color:var(--dsw-alias-state-business-primary);font-size:12px}.ZsMDKq_compatHint{color:var(--dsw-alias-label-tertiary);font-size:12px}.ZsMDKq_compatBlocked{color:var(--dsw-alias-label-danger);font-size:12px}.ZsMDKq_ok{color:var(--dsw-alias-state-success-primary);margin:0;font-size:12px}.ZsMDKq_error{color:var(--dsw-alias-label-danger);word-break:break-word;margin:0;font-size:12px}.ZsMDKq_progressRow{flex-direction:column;gap:6px;display:flex}.ZsMDKq_progressTrack{background:var(--dsw-alias-bg-layer-2);border-radius:3px;height:6px;overflow:hidden}.ZsMDKq_progressBar{background:var(--dsw-alias-state-business-primary);height:100%;transition:width .2s}.ZsMDKq_progressBar[data-indeterminate=true]{width:40%;animation:1.2s ease-in-out infinite ZsMDKq_pluginManagerIndeterminate}@keyframes ZsMDKq_pluginManagerIndeterminate{0%{transform:translate(-100%)}to{transform:translate(250%)}}@media (prefers-reduced-motion:reduce){.ZsMDKq_progressBar[data-indeterminate=true]{width:40%;animation:none}}.ZsMDKq_restartRow{border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-brand);border-radius:8px;padding:10px 12px}.ZsMDKq_restartRow p{color:var(--dsw-alias-brand-primary);margin:0}";
 		const tagId$15 = "@linxin666/dsh-web-all/packages/dsh-plugin-manager/src/client/plugin-manager.module.css";
 		if (typeof document !== "undefined" && document.querySelector("style[data-plugin-css=" + JSON.stringify(tagId$15) + "]") === null) {
 			const tag = document.createElement("style");
@@ -929,67 +830,45 @@ window.__ModuleLoader__.load({
 			document.head.appendChild(tag);
 		}
 		var plugin_manager_module_css_default = {
-			"actions": "ZsMDKq_actions",
-			"actionsRow": "ZsMDKq_actionsRow",
-			"applying": "ZsMDKq_applying",
-			"badge": "ZsMDKq_badge",
-			"chevron": "ZsMDKq_chevron",
-			"childList": "ZsMDKq_childList",
-			"childName": "ZsMDKq_childName",
-			"childRow": "ZsMDKq_childRow",
-			"childrenSummary": "ZsMDKq_childrenSummary",
-			"childrenToggle": "ZsMDKq_childrenToggle",
+			"actionRow": "ZsMDKq_actionRow",
+			"button": "ZsMDKq_button",
 			"compatBlocked": "ZsMDKq_compatBlocked",
 			"compatHint": "ZsMDKq_compatHint",
-			"conflicts": "ZsMDKq_conflicts",
-			"empty": "ZsMDKq_empty",
 			"error": "ZsMDKq_error",
-			"errorRow": "ZsMDKq_errorRow",
-			"failure": "ZsMDKq_failure",
-			"failureActions": "ZsMDKq_failureActions",
-			"failureMessage": "ZsMDKq_failureMessage",
-			"group": "ZsMDKq_group",
 			"hint": "ZsMDKq_hint",
 			"latest": "ZsMDKq_latest",
-			"link": "ZsMDKq_link",
-			"list": "ZsMDKq_list",
-			"lockedHint": "ZsMDKq_lockedHint",
-			"meta": "ZsMDKq_meta",
-			"name": "ZsMDKq_name",
 			"notice": "ZsMDKq_notice",
 			"ok": "ZsMDKq_ok",
 			"pluginManagerIndeterminate": "ZsMDKq_pluginManagerIndeterminate",
+			"primary": "ZsMDKq_primary",
 			"progressBar": "ZsMDKq_progressBar",
-			"progressLabel": "ZsMDKq_progressLabel",
 			"progressRow": "ZsMDKq_progressRow",
 			"progressTrack": "ZsMDKq_progressTrack",
 			"restartRow": "ZsMDKq_restartRow",
-			"row": "ZsMDKq_row",
-			"safeModeBanner": "ZsMDKq_safeModeBanner",
 			"section": "ZsMDKq_section",
-			"sectionTitle": "ZsMDKq_sectionTitle",
-			"sourceBadge": "ZsMDKq_sourceBadge",
-			"specText": "ZsMDKq_specText",
-			"state": "ZsMDKq_state",
-			"stateLabel": "ZsMDKq_stateLabel",
-			"sub": "ZsMDKq_sub",
-			"version": "ZsMDKq_version"
+			"title": "ZsMDKq_title"
 		};
 		//#endregion
-		//#region ../dsh-plugin-manager/src/client/PluginManagerTab.tsx
+		//#region ../dsh-plugin-manager/src/client/PluginUpdatePatch.tsx
 		/**
-		* The plugin-manager tab keeps only what the official plugin manager page does
-		* not do. Installing, uninstalling and enabling or disabling a bundle or a row
-		* — with live switching and a build-script approval dialog — belong to the
-		* official page since 0.1.6-alpha.2, so this tab renders a read-only inventory
-		* and points there. Its own surface is the differentiating half: registry
-		* update checks with DSH-runtime compatibility gating, the install-conflict
-		* ledger the host records around an install or update (with undo and a repair
-		* handoff), the boot-failure ring with its repair conversation, and the
-		* safe-mode banner. Changes that need a restart say so.
+		* The check-for-updates patch contributed to the official Plugins page.
 		*
-		* This tab registers into the official Plugins settings section
-		* (`settings.plugins.tab` slot) next to the official inventory tab.
+		* This package used to own a "Plugin manager" tab inside the Plugins settings
+		* section (`settings.plugins.tab`). Installing, uninstalling, enabling and
+		* disabling moved to the official plugin manager page long ago, and the tab's
+		* remaining half (read-only inventory, install-conflict ledger, boot-failure
+		* repair conversation, safe-mode banner) is UI no official page renders. It is
+		* gone; the one capability the official page still lacks is comparing an
+		* installed plugin against its registry source.
+		*
+		* So this package now contributes exactly that, into the seat the official
+		* Plugins page declares for contributed sections (`plugins.detail.section`,
+		* a root-scope list rendered on every bundle / row / official-plugin page with
+		* the page's `subject`). The official page owns the page chrome; this entry
+		* renders one compact block, only on an installed bundle's page, drawing only
+		* a plain button and its own section so it carries no dependency on the
+		* official primitives bundle.
+		* @module @linxin666/dsh-client-ui-plugin-manager/client
 		*/
 		/** Error text for a caught request or lifecycle failure. */
 		function messageOf$2(error) {
@@ -999,110 +878,35 @@ window.__ModuleLoader__.load({
 			}
 			return error instanceof Error ? error.message : String(error);
 		}
-		/** Localized fragments for the repair seed builders, read from the tab's dictionaries. */
-		function repairCopy(t) {
-			return {
-				failureTitle: t("repairFailureTitle"),
-				failurePluginLabel: t("repairFailurePluginLabel"),
-				failureKindLabel: t("repairFailureKindLabel"),
-				failureAtLabel: t("repairFailureAtLabel"),
-				failureMessageLabel: t("repairFailureMessageLabel"),
-				failureStackLabel: t("repairFailureStackLabel"),
-				failurePathLabel: t("repairFailurePathLabel"),
-				failureAsk: t("repairFailureAsk"),
-				kindNames: {
-					"load-failure": t("repairKindLoad"),
-					hang: t("repairKindHang"),
-					"late-rejection": t("repairKindLate")
-				},
-				conflictTitle: t("repairConflictTitle"),
-				conflictPluginLabel: t("repairConflictPluginLabel"),
-				conflictChangeLabel: t("repairConflictChangeLabel"),
-				conflictAsk: t("repairConflictAsk"),
-				stateNames: {
-					enabled: t("repairStateEnabled"),
-					disabled: t("repairStateDisabled"),
-					uninstalled: t("repairStateUninstalled")
-				}
-			};
-		}
 		/** Localized label for one install phase, with percent when the download has one. */
 		function progressLabel(progress, t) {
-			if (progress.stage === "fetch") return t("fetching");
-			if (progress.stage === "extract") return t("extracting");
 			if (progress.stage === "write") return t("writing");
 			return progress.percent === void 0 ? t("downloading") : t("downloadingPercent", { percent: String(progress.percent) });
 		}
-		/** The plugin-manager settings tab. */
-		function PluginManagerTab(props) {
-			const { t, isLoopback, list, update, checkUpdates, status, failures, setSafeMode, repairPlugin, controlsList, controlsSetEnabled, lastInstallConflicts } = props;
-			const [view, setView] = (0, react.useState)({ status: "loading" });
+		/**
+		* The update block on one official Plugins page: one check action, the verdict
+		* for this page's bundle, and the update action it unlocks. The check is
+		* explicit rather than automatic because one check reads every installed
+		* plugin's registry manifest; a page visit must not fan that out.
+		*/
+		function PluginUpdatePatch(props) {
+			const { t, subject, isLoopback, checkUpdates, update, status } = props;
+			const [checked, setChecked] = (0, react.useState)(false);
+			const [found, setFound] = (0, react.useState)(void 0);
 			const [busy, setBusy] = (0, react.useState)(void 0);
-			const [toggleBusy, setToggleBusy] = (0, react.useState)(void 0);
 			const [error, setError] = (0, react.useState)(void 0);
-			const [dirty, setDirty] = (0, react.useState)(false);
-			const [repairing, setRepairing] = (0, react.useState)(void 0);
-			const [copied, setCopied] = (0, react.useState)(void 0);
-			const [updates, setUpdates] = (0, react.useState)(/* @__PURE__ */ new Map());
-			const [conflicts, setConflicts] = (0, react.useState)([]);
 			const [progress, setProgress] = (0, react.useState)({
 				kind: "idle",
 				stage: "fetch"
 			});
-			/** Parent rows whose aggregate child list is expanded; collapsed by default. */
-			const [expandedChildren, setExpandedChildren] = (0, react.useState)(() => /* @__PURE__ */ new Set());
-			/** Synchronous in-flight mirror of `busy`: the render-time guard alone lets a
-			* click and an Enter land in the same frame and double-fire. */
+			const [dirty, setDirty] = (0, react.useState)(false);
+			/** Synchronous in-flight mirror of `busy`: the render guard alone lets a click and an Enter land in the same frame and double-fire. */
 			const busyRef = (0, react.useRef)(false);
-			/**
-			* Reload every snapshot into the ready view. The conflict ledger is the
-			* host's record of the last install or update that ran through this
-			* package's gateway channel — including a Workshop install driven through
-			* the shared service — so it is read here rather than diffed around an
-			* install this tab no longer performs.
-			*/
-			const reload = async () => {
-				const [plugins, controls, failureSnapshot] = await Promise.all([
-					list(),
-					controlsList(),
-					failures()
-				]);
-				if (lastInstallConflicts !== void 0) setConflicts(lastInstallConflicts());
-				setView({
-					status: "ready",
-					plugins,
-					controls,
-					failures: failureSnapshot
-				});
-			};
+			const name = subject.kind === "bundle" ? subject.pkg.name : void 0;
+			const installed = subject.kind === "bundle" && subject.pkg.installed;
+			/** Poll update progress while an update is in flight. */
 			(0, react.useEffect)(() => {
-				let cancelled = false;
-				reload().catch(() => {
-					if (!cancelled) setView({ status: "error" });
-				});
-				return () => {
-					cancelled = true;
-				};
-			}, []);
-			/** One row/form operation: busy state, error row, dirty flag on success. */
-			const run = async (action, body) => {
-				if (busyRef.current) return;
-				busyRef.current = true;
-				setBusy(action);
-				setError(void 0);
-				try {
-					await body();
-					setDirty(true);
-				} catch (reason) {
-					setError(t("failed", { reason: messageOf$2(reason) }));
-				} finally {
-					busyRef.current = false;
-					setBusy(void 0);
-				}
-			};
-			/** Poll update progress while such an operation is in flight. */
-			(0, react.useEffect)(() => {
-				if (busy === void 0 || busy.kind !== "update") {
+				if (busy !== "update") {
 					setProgress({
 						kind: "idle",
 						stage: "fetch"
@@ -1127,477 +931,108 @@ window.__ModuleLoader__.load({
 					if (timer !== void 0) clearTimeout(timer);
 				};
 			}, [busy, status]);
-			const toggleDisabled = busy !== void 0 || toggleBusy !== void 0 || view.status === "ready" && view.failures.safeMode;
-			/** Expand or collapse one aggregate row's child list (pure view state). */
-			const toggleChildren = (id) => {
-				setExpandedChildren((current) => {
-					const next = new Set(current);
-					if (next.has(id)) next.delete(id);
-					else next.add(id);
-					return next;
-				});
-			};
-			const onProductToggle = (id, enabled) => {
-				setToggleBusy({
-					kind: "product",
-					id
-				});
-				setError(void 0);
-				controlsSetEnabled(id, enabled).then((controls) => {
-					setView((current) => current.status === "ready" ? {
-						...current,
-						controls
-					} : current);
-					setConflicts((previous) => previous.filter((change) => change.id !== id));
-					setDirty(true);
-					setToggleBusy(void 0);
-				}).catch((reason) => {
-					setError(t("failed", { reason: messageOf$2(reason) }));
-					setToggleBusy(void 0);
-				});
-			};
+			if (name === void 0 || !installed) return null;
 			const onCheck = () => {
-				run({ kind: "check" }, async () => {
-					const found = await checkUpdates();
-					setUpdates(new Map(found.map((item) => [item.id, item])));
-				});
-			};
-			const onUpdate = (id) => {
-				run({
-					kind: "update",
-					id
-				}, async () => {
-					const before = view.status === "ready" ? view.controls : await controlsList().catch(() => []);
-					await update(id);
-					setUpdates((previous) => {
-						const next = new Map(previous);
-						next.delete(id);
-						return next;
-					});
-					await reload();
-					if ((lastInstallConflicts?.() ?? []).length > 0) return;
-					const after = await controlsList().catch(() => []);
-					setConflicts(diffControls(before, after));
-				});
-			};
-			/** Open a repair conversation seeded with one boot-failure record. `token`
-			* identifies the row for the in-flight label (plugin id, or a row key for
-			* unattributable failures). */
-			const onRepair = (failure, token) => {
-				if (view.status !== "ready" || busy !== void 0 || repairing !== void 0) return;
+				if (busyRef.current) return;
+				busyRef.current = true;
+				setBusy("check");
 				setError(void 0);
-				setRepairing(token);
-				repairPlugin(view.failures.pluginRoot, failureRepairMessage(failure, repairCopy(t))).then(() => {
-					setRepairing(void 0);
+				checkUpdates().then((items) => {
+					setFound(items.find((item) => item.id === name));
+					setChecked(true);
 				}).catch((reason) => {
 					setError(t("failed", { reason: messageOf$2(reason) }));
-					setRepairing(void 0);
+				}).finally(() => {
+					busyRef.current = false;
+					setBusy(void 0);
 				});
 			};
-			/** Copy a boot failure's message and stack for a manual repair conversation. */
-			const onCopy = (failure, token) => {
-				navigator.clipboard.writeText(`${failure.message}\n\n${failure.stack}`).then(() => {
-					setCopied(token);
-				}).catch(() => {
-					setError(t("failed", { reason: "clipboard unavailable" }));
-				});
-			};
-			const onExitSafeMode = () => {
-				if (busy !== void 0) return;
+			const onUpdate = () => {
+				if (busyRef.current || found === void 0) return;
+				busyRef.current = true;
+				setBusy("update");
 				setError(void 0);
-				setSafeMode(false).then(() => {
+				update(found.id).then(() => {
+					setFound(void 0);
+					setChecked(false);
 					setDirty(true);
-					reload().catch((reason) => {
-						setError(t("failed", { reason: messageOf$2(reason) }));
-					});
 				}).catch((reason) => {
 					setError(t("failed", { reason: messageOf$2(reason) }));
+				}).finally(() => {
+					busyRef.current = false;
+					setBusy(void 0);
 				});
 			};
-			/** Undo one conflict action by flipping the product switch back. */
-			const onUndoConflict = (change) => {
-				if (change.to !== "disabled") return;
-				onProductToggle(change.id, true);
-			};
-			/** Hand one conflict notice off to a repair conversation over the plugin root. */
-			const onRepairConflict = (change) => {
-				if (view.status !== "ready" || busy !== void 0 || repairing !== void 0) return;
-				setError(void 0);
-				const token = `conflict:${change.id}`;
-				setRepairing(token);
-				repairPlugin(view.failures.pluginRoot, conflictRepairMessage({
-					id: change.id,
-					name: change.name,
-					from: change.from === "enabled" || change.from === "disabled" ? change.from : "uninstalled",
-					to: change.to === "enabled" || change.to === "disabled" ? change.to : "uninstalled"
-				}, repairCopy(t))).then(() => {
-					setRepairing(void 0);
-				}).catch((reason) => {
-					setError(t("failed", { reason: messageOf$2(reason) }));
-					setRepairing(void 0);
-				});
-			};
-			if (!isLoopback) return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+			if (!isLoopback) return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("section", {
 				className: plugin_manager_module_css_default.notice,
+				"data-update-patch": true,
+				"data-state": "local-only",
 				children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("strong", { children: t("localOnlyTitle") }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", { children: t("localOnlyBody") })]
 			});
-			if (view.status === "loading") return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
-				className: plugin_manager_module_css_default.state,
-				children: t("loading")
-			});
-			if (view.status === "error") return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
-				className: plugin_manager_module_css_default.state,
-				children: t("failed", { reason: "load" })
-			});
-			const attributable = new Map(view.failures.items.filter((item) => item.pluginId !== "").map((item) => [item.pluginId, item]));
-			const unattributable = view.failures.items.filter((item) => item.pluginId === "");
-			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+			const requiresDsh = found?.requiresDsh;
+			const blocked = found?.compatible === false;
+			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("section", {
 				className: plugin_manager_module_css_default.section,
-				"aria-busy": busy !== void 0 || toggleBusy !== void 0,
+				"data-update-patch": true,
+				"aria-busy": busy !== void 0,
 				children: [
-					view.failures.safeMode && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-						className: plugin_manager_module_css_default.safeModeBanner,
-						"data-safe-mode": true,
-						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", { children: t("safeModeBanner") }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.Button, {
-							variant: "primary",
-							disabled: busy !== void 0,
-							onClick: onExitSafeMode,
-							children: t("exitSafeMode")
-						})]
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("h3", {
+						className: plugin_manager_module_css_default.title,
+						children: t("updateSection")
 					}),
-					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
-						className: plugin_manager_module_css_default.hint,
-						"data-manage-elsewhere": true,
-						children: t("manageElsewhere")
+					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+						className: plugin_manager_module_css_default.actionRow,
+						children: [
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+								type: "button",
+								className: plugin_manager_module_css_default.button,
+								disabled: busy !== void 0,
+								onClick: onCheck,
+								children: busy === "check" ? t("checking") : t("checkUpdates")
+							}),
+							checked && found === void 0 && busy === void 0 && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+								className: plugin_manager_module_css_default.ok,
+								children: t("noUpdates")
+							}),
+							found !== void 0 && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+								className: plugin_manager_module_css_default.latest,
+								"data-update-latest": found.latest,
+								children: t("latest", { version: found.latest })
+							}),
+							found !== void 0 && requiresDsh !== void 0 && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+								className: blocked ? plugin_manager_module_css_default.compatBlocked : plugin_manager_module_css_default.compatHint,
+								"data-update-compat": blocked ? "blocked" : "ok",
+								children: blocked ? t("updateBlockedDsh", { min: displayMinimumVersion(requiresDsh) }) : t("updateRequiresDsh", { min: displayMinimumVersion(requiresDsh) })
+							}),
+							found !== void 0 && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+								type: "button",
+								className: `${plugin_manager_module_css_default.button} ${plugin_manager_module_css_default.primary}`,
+								disabled: busy !== void 0 || blocked,
+								onClick: onUpdate,
+								children: busy === "update" ? t("updating") : t("update")
+							})
+						]
 					}),
-					busy?.kind === "update" && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+					busy === "update" && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 						className: plugin_manager_module_css_default.progressRow,
 						role: "status",
 						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 							className: plugin_manager_module_css_default.progressTrack,
 							children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 								className: plugin_manager_module_css_default.progressBar,
-								style: progress.percent === void 0 ? void 0 : { width: `${progress.percent}%` },
+								style: progress.percent === void 0 ? void 0 : { width: `${String(progress.percent)}%` },
 								"data-indeterminate": progress.percent === void 0 ? "true" : void 0
 							})
 						}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
-							className: plugin_manager_module_css_default.progressLabel,
+							className: plugin_manager_module_css_default.hint,
 							children: progressLabel(progress, t)
 						})]
 					}),
-					error !== void 0 && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
-						className: plugin_manager_module_css_default.errorRow,
-						children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-							className: plugin_manager_module_css_default.error,
-							children: error
-						})
-					}),
-					conflicts.length > 0 && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-						className: plugin_manager_module_css_default.conflicts,
-						children: [
-							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("h3", {
-								className: plugin_manager_module_css_default.sectionTitle,
-								children: t("conflictTitle")
-							}),
-							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("ul", {
-								className: plugin_manager_module_css_default.list,
-								children: conflicts.map((change) => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("li", {
-									className: plugin_manager_module_css_default.row,
-									"data-conflict": change.id,
-									children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-										className: plugin_manager_module_css_default.meta,
-										children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-											className: plugin_manager_module_css_default.name,
-											children: change.name
-										}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-											className: plugin_manager_module_css_default.sub,
-											children: classifyChange(change) === "rule-disabled" ? t("conflictDisabled", { name: change.name }) : classifyChange(change) === "rule-enabled" ? t("conflictEnabled", { name: change.name }) : t("conflictChanged", { name: change.name })
-										})]
-									}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-										className: plugin_manager_module_css_default.actions,
-										children: [change.to === "disabled" && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.Button, {
-											variant: "outline",
-											disabled: toggleDisabled,
-											onClick: () => {
-												onUndoConflict(change);
-											},
-											children: t("undoConflict")
-										}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.Button, {
-											variant: "outline",
-											disabled: busy !== void 0 || repairing !== void 0,
-											onClick: () => {
-												onRepairConflict(change);
-											},
-											children: repairing === `conflict:${change.id}` ? t("repairing") : t("repair")
-										})]
-									})]
-								}, change.id))
-							}),
-							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
-								className: plugin_manager_module_css_default.hint,
-								children: t("conflictHint")
-							})
-						]
-					}),
-					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-						className: plugin_manager_module_css_default.group,
-						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("h3", {
-							className: plugin_manager_module_css_default.sectionTitle,
-							children: t("userPlugins")
-						}), view.plugins.length === 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
-							className: plugin_manager_module_css_default.empty,
-							children: t("empty")
-						}) : /* @__PURE__ */ (0, react_jsx_runtime.jsx)("ul", {
-							className: plugin_manager_module_css_default.list,
-							children: view.plugins.map((plugin) => {
-								const updateItem = updates.get(plugin.id);
-								const latest = updateItem?.latest;
-								const dshRequirement = updateItem?.requiresDsh;
-								const failure = attributable.get(plugin.id);
-								const children = plugin.children;
-								const mixed = children !== void 0 && !plugin.enabled && children.some((child) => child.enabled);
-								return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("li", {
-									"data-plugin-id": plugin.id,
-									children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-										className: plugin_manager_module_css_default.row,
-										children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-											className: plugin_manager_module_css_default.meta,
-											children: [
-												/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-													className: plugin_manager_module_css_default.name,
-													children: plugin.name
-												}),
-												/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
-													className: plugin_manager_module_css_default.sub,
-													children: [
-														/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-															className: plugin_manager_module_css_default.version,
-															children: t("version", { version: plugin.version })
-														}),
-														/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-															className: plugin_manager_module_css_default.sourceBadge,
-															"data-source": plugin.source.kind,
-															children: plugin.source.kind === "npm" ? t("npmSource") : t("gitSource")
-														}),
-														/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-															className: plugin_manager_module_css_default.specText,
-															title: plugin.source.spec,
-															children: plugin.source.spec
-														})
-													]
-												}),
-												latest !== void 0 && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-													className: plugin_manager_module_css_default.latest,
-													children: t("latest", { version: latest })
-												}),
-												updateItem !== void 0 && dshRequirement !== void 0 && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-													className: updateItem.compatible === false ? plugin_manager_module_css_default.compatBlocked : plugin_manager_module_css_default.compatHint,
-													children: updateItem.compatible === false ? t("updateBlockedDsh", { min: displayMinimumVersion(dshRequirement) }) : t("updateRequiresDsh", { min: displayMinimumVersion(dshRequirement) })
-												}),
-												failure !== void 0 && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-													className: plugin_manager_module_css_default.failure,
-													"data-plugin-failure": plugin.id,
-													children: [
-														/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-															className: plugin_manager_module_css_default.badge,
-															children: t("failureBadge")
-														}),
-														/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-															className: plugin_manager_module_css_default.failureMessage,
-															title: failure.message,
-															children: failure.message
-														}),
-														/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-															className: plugin_manager_module_css_default.failureActions,
-															children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.Button, {
-																variant: "primary",
-																disabled: busy !== void 0 || repairing !== void 0,
-																onClick: () => {
-																	onRepair(failure, plugin.id);
-																},
-																children: repairing === plugin.id ? t("repairing") : t("repair")
-															}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.Button, {
-																variant: "outline",
-																disabled: busy !== void 0,
-																onClick: () => {
-																	onCopy(failure, plugin.id);
-																},
-																children: copied === plugin.id ? t("copied") : t("copyError")
-															})]
-														})
-													]
-												})
-											]
-										}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-											className: plugin_manager_module_css_default.actions,
-											children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-												className: plugin_manager_module_css_default.stateLabel,
-												"data-state": plugin.enabled ? "enabled" : mixed ? "mixed" : "disabled",
-												children: plugin.enabled ? t("enabled") : mixed ? t("mixed") : t("disabled")
-											}), latest !== void 0 && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.Button, {
-												variant: "outline",
-												disabled: busy !== void 0 || updateItem?.compatible === false,
-												onClick: () => {
-													onUpdate(plugin.id);
-												},
-												children: busy?.kind === "update" && busy.id === plugin.id ? t("updating") : t("update")
-											})]
-										})]
-									}), children !== void 0 && children.length > 0 && (() => {
-										const listId = "pm-children-" + plugin.id.replace(/[^a-zA-Z0-9_-]/g, "-");
-										const expanded = expandedChildren.has(plugin.id);
-										const enabledCount = children.filter((child) => child.enabled).length;
-										return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("button", {
-											type: "button",
-											className: plugin_manager_module_css_default.childrenToggle,
-											"aria-expanded": expanded,
-											"aria-controls": listId,
-											"aria-label": expanded ? t("childrenHide", { name: plugin.name }) : t("childrenShow", { name: plugin.name }),
-											onClick: () => {
-												toggleChildren(plugin.id);
-											},
-											children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-												className: plugin_manager_module_css_default.chevron,
-												"data-expanded": expanded,
-												"aria-hidden": "true"
-											}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-												className: plugin_manager_module_css_default.childrenSummary,
-												children: t("childrenSummary", {
-													enabled: enabledCount,
-													total: children.length
-												})
-											})]
-										}), expanded && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("ul", {
-											id: listId,
-											className: plugin_manager_module_css_default.childList,
-											children: children.map((child) => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("li", {
-												className: plugin_manager_module_css_default.childRow,
-												"data-plugin-row": child.id,
-												children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-													className: plugin_manager_module_css_default.childName,
-													title: child.id,
-													children: child.name
-												}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-													className: plugin_manager_module_css_default.actions,
-													children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-														className: plugin_manager_module_css_default.stateLabel,
-														"data-state": child.enabled ? "enabled" : "disabled",
-														children: child.enabled ? t("enabled") : t("disabled")
-													}), child.locked === true ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-														className: plugin_manager_module_css_default.lockedHint,
-														children: t("lockedRowHint")
-													}) : null]
-												})]
-											}, child.id))
-										}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
-											className: plugin_manager_module_css_default.hint,
-											children: t("childrenHint")
-										})] })] });
-									})()]
-								}, plugin.id);
-							})
-						})]
-					}),
-					view.controls.length > 0 && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-						className: plugin_manager_module_css_default.group,
-						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("h3", {
-							className: plugin_manager_module_css_default.sectionTitle,
-							children: t("products")
-						}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("ul", {
-							className: plugin_manager_module_css_default.list,
-							children: view.controls.map((control) => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("li", {
-								className: plugin_manager_module_css_default.row,
-								"data-product-id": control.id,
-								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-									className: plugin_manager_module_css_default.meta,
-									children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-										className: plugin_manager_module_css_default.name,
-										children: control.name
-									}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-										className: plugin_manager_module_css_default.sub,
-										children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("a", {
-											className: plugin_manager_module_css_default.link,
-											href: control.repository,
-											target: "_blank",
-											rel: "noreferrer",
-											children: t("source")
-										})
-									})]
-								}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
-									className: plugin_manager_module_css_default.actions,
-									children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-										className: plugin_manager_module_css_default.stateLabel,
-										"data-state": control.state,
-										children: t(control.state)
-									})
-								})]
-							}, control.id))
-						})]
-					}),
-					unattributable.length > 0 && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-						className: plugin_manager_module_css_default.group,
-						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("h3", {
-							className: plugin_manager_module_css_default.sectionTitle,
-							children: t("failureGroupTitle")
-						}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("ul", {
-							className: plugin_manager_module_css_default.list,
-							children: unattributable.map((failure, index) => {
-								const token = `other:${index}`;
-								return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("li", {
-									className: plugin_manager_module_css_default.row,
-									"data-plugin-failure": "other",
-									children: /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-										className: plugin_manager_module_css_default.meta,
-										children: [
-											/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-												className: plugin_manager_module_css_default.badge,
-												children: t("failureBadge")
-											}),
-											/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-												className: plugin_manager_module_css_default.failureMessage,
-												title: failure.message,
-												children: failure.message
-											}),
-											/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-												className: plugin_manager_module_css_default.failureActions,
-												children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.Button, {
-													variant: "primary",
-													disabled: busy !== void 0 || repairing !== void 0,
-													onClick: () => {
-														onRepair(failure, token);
-													},
-													children: repairing === token ? t("repairing") : t("repair")
-												}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.Button, {
-													variant: "outline",
-													disabled: busy !== void 0,
-													onClick: () => {
-														onCopy(failure, token);
-													},
-													children: copied === token ? t("copied") : t("copyError")
-												})]
-											})
-										]
-									})
-								}, `${failure.at}-${index}`);
-							})
-						})]
-					}),
-					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-						className: plugin_manager_module_css_default.actionsRow,
-						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.Button, {
-							variant: "outline",
-							disabled: busy !== void 0,
-							onClick: onCheck,
-							children: busy?.kind === "check" ? t("checking") : t("checkUpdates")
-						}), updates.size === 0 && busy === void 0 && view.plugins.length > 0 && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
-							className: plugin_manager_module_css_default.ok,
-							children: t("noUpdates")
-						})]
-					}),
-					toggleBusy !== void 0 && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
-						className: plugin_manager_module_css_default.applying,
-						"aria-live": "polite",
-						children: t("applying")
+					error !== void 0 && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+						className: plugin_manager_module_css_default.error,
+						role: "alert",
+						"data-update-error": true,
+						children: error
 					}),
 					dirty && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 						className: plugin_manager_module_css_default.restartRow,
@@ -1609,155 +1044,56 @@ window.__ModuleLoader__.load({
 		//#endregion
 		//#region ../dsh-plugin-manager/src/client/locales.ts
 		/**
-		* Locale dictionaries for the plugin-manager tab. The zh dictionary is the
-		* key source; the en dictionary mirrors the exact key set.
+		* Locale dictionaries for the plugin-manager's official-page patch. The zh
+		* dictionary is the key source; the en dictionary mirrors the exact key set.
+		*
+		* The key set covers only what this package still renders: the
+		* check-for-updates block on a bundle's page in the official Plugins panel.
+		* The former tab's keys (inventory, conflicts, repair seeds, safe mode,
+		* aggregate children) left with that tab.
 		* @module @linxin666/dsh-client-ui-plugin-manager/client
 		*/
 		/** Simplified Chinese copy (the key-set source of truth). */
 		const STATIC_ZH = {
-			tab: "插件管理",
-			manageElsewhere: "安装、卸载与启停已由官方插件管理页负责（侧边栏「插件」）；这里保留更新检查、安装冲突与启动失败修复。",
-			loading: "正在读取插件…",
-			empty: "尚未安装任何用户插件。",
-			userPlugins: "用户插件",
-			products: "内置产品",
-			conflictTitle: "安装冲突",
-			conflictDisabled: "已自动禁用 {name}，避免重复挂载。",
-			conflictEnabled: "已重新启用 {name}。",
-			conflictChanged: "{name} 的状态已变更。",
-			undoConflict: "撤销",
-			conflictHint: "冲突动作在安装时自动执行，撤销会写回开关并在重启后生效。",
-			version: "已安装 {version}",
-			latest: "最新 {version}",
-			update: "更新",
-			updating: "更新中…",
-			checkUpdates: "检查更新",
-			checking: "检查中…",
-			noUpdates: "所有插件都是最新版本。",
-			updateRequiresDsh: "需要 DSH ≥ {min}",
-			updateBlockedDsh: "需要 DSH ≥ {min}，请先升级 DSH 再更新",
-			restartHint: "插件变更将在重启应用后生效。",
-			failed: "操作失败：{reason}",
-			enabled: "已开启",
-			disabled: "已关闭",
-			mixed: "部分开启",
-			unavailable: "不可用",
-			uninstalled: "已卸载",
-			source: "查看源码",
-			applying: "正在应用更改…",
-			fetching: "正在获取插件信息…",
-			downloading: "正在下载…",
-			downloadingPercent: "正在下载 {percent}%",
-			extracting: "正在解压…",
-			writing: "正在写入配置…",
-			localOnlyTitle: "仅限本机操作",
-			localOnlyBody: "为了保护主机配置，插件管理只能从本机打开。",
-			failureBadge: "启动失败",
-			failureGroupTitle: "其他启动失败",
-			repair: "让 Agent 修复",
-			repairing: "正在创建修复对话…",
-			copyError: "复制错误",
-			copied: "已复制",
-			safeModeBanner: "安全模式：用户插件配置已跳过，插件开关不可用。",
-			exitSafeMode: "恢复正常模式并重启",
-			npmSource: "npm",
-			gitSource: "git",
-			lockedRowHint: "核心行",
-			childrenHint: "子插件的启停在官方插件管理页操作；停用后不再加载，代码仍随全家桶更新。",
-			childrenSummary: "子插件 {enabled}/{total} 已启用",
-			childrenShow: "展开 {name} 的子插件",
-			childrenHide: "收起 {name} 的子插件",
-			repairFailureTitle: "插件上次启动失败。请修复它。",
-			repairFailurePluginLabel: "插件",
-			repairFailureKindLabel: "失败类型",
-			repairFailureAtLabel: "时间",
-			repairFailureMessageLabel: "失败详情",
-			repairFailureStackLabel: "原始堆栈",
-			repairFailurePathLabel: "插件安装目录",
-			repairFailureAsk: "请检查并修复该插件；修复完成后告诉我如何重新启用。",
-			repairKindLoad: "加载失败",
-			repairKindHang: "启动挂起",
-			repairKindLate: "迟到拒绝",
-			repairConflictTitle: "正在处理插件安装冲突",
-			repairConflictPluginLabel: "冲突条目",
-			repairConflictChangeLabel: "状态变化",
-			repairConflictAsk: "请检查冲突双方的入口行 id 与挂载方式，消除重复挂载后告诉我如何重新启用。",
-			repairStateEnabled: "已开启",
-			repairStateDisabled: "已关闭",
-			repairStateUninstalled: "已卸载"
+			"updateSection": "更新",
+			"checkUpdates": "检查更新",
+			"checking": "检查中…",
+			"noUpdates": "已是最新版本。",
+			"update": "更新",
+			"updating": "更新中…",
+			"latest": "最新 {version}",
+			"updateRequiresDsh": "需要 DSH ≥ {min}",
+			"updateBlockedDsh": "需要 DSH ≥ {min}，请先升级 DSH 再更新",
+			"restartHint": "插件变更将在重启应用后生效。",
+			"failed": "操作失败：{reason}",
+			"fetching": "正在获取插件信息…",
+			"downloading": "正在下载…",
+			"downloadingPercent": "正在下载 {percent}%",
+			"extracting": "正在解压…",
+			"writing": "正在写入配置…",
+			"localOnlyTitle": "仅限本机操作",
+			"localOnlyBody": "为了保护主机配置，插件管理只能从本机打开。"
 		};
 		/** English copy, checked complete against the zh key set. */
 		const STATIC_EN = {
-			tab: "Plugin manager",
-			manageElsewhere: "Installing, uninstalling and enabling plugins now live on the official plugin manager page (the Plugins entry in the sidebar); this tab keeps update checks, install conflicts and startup-failure repair.",
-			loading: "Reading plugins…",
-			empty: "No user plugins installed yet.",
-			userPlugins: "User plugins",
-			products: "Built-in products",
-			conflictTitle: "Install conflicts",
-			conflictDisabled: "Automatically disabled {name} to avoid double mounting.",
-			conflictEnabled: "Re-enabled {name}.",
-			conflictChanged: "The state of {name} changed.",
-			undoConflict: "Undo",
-			conflictHint: "Conflict actions run automatically at install time; undoing writes the switch back and applies after a restart.",
-			version: "Installed {version}",
-			latest: "Latest {version}",
-			update: "Update",
-			updating: "Updating…",
-			checkUpdates: "Check for updates",
-			checking: "Checking…",
-			noUpdates: "All plugins are up to date.",
-			updateRequiresDsh: "Requires DSH >= {min}",
-			updateBlockedDsh: "Requires DSH >= {min}; upgrade DSH before updating",
-			restartHint: "Plugin changes take effect after restarting the application.",
-			failed: "Operation failed: {reason}",
-			enabled: "On",
-			disabled: "Off",
-			mixed: "Partially on",
-			unavailable: "Unavailable",
-			uninstalled: "Uninstalled",
-			source: "View source",
-			applying: "Applying change…",
-			fetching: "Fetching plugin metadata…",
-			downloading: "Downloading…",
-			downloadingPercent: "Downloading {percent}%",
-			extracting: "Extracting…",
-			writing: "Writing configuration…",
-			localOnlyTitle: "Available on this computer only",
-			localOnlyBody: "To protect host configuration, plugin management is only available from a local browser.",
-			failureBadge: "Startup failure",
-			failureGroupTitle: "Other startup failures",
-			repair: "Ask the agent to fix",
-			repairing: "Opening repair conversation…",
-			copyError: "Copy error",
-			copied: "Copied",
-			safeModeBanner: "Safe mode: user plugin configuration is skipped; plugin switches are disabled.",
-			exitSafeMode: "Restore normal mode and restart",
-			npmSource: "npm",
-			gitSource: "git",
-			lockedRowHint: "Core row",
-			childrenHint: "Bundle child plugins are switched on the official plugin manager page; a disabled child is never loaded, while its code still updates with the bundle.",
-			childrenSummary: "{enabled}/{total} child plugins on",
-			childrenShow: "Show child plugins of {name}",
-			childrenHide: "Hide child plugins of {name}",
-			repairFailureTitle: "A plugin failed to start last time. Please fix it.",
-			repairFailurePluginLabel: "Plugin",
-			repairFailureKindLabel: "Failure kind",
-			repairFailureAtLabel: "At",
-			repairFailureMessageLabel: "Failure details",
-			repairFailureStackLabel: "Original stack",
-			repairFailurePathLabel: "Plugin install directory",
-			repairFailureAsk: "Please inspect and fix the plugin; tell me how to re-enable it afterwards.",
-			repairKindLoad: "Load failure",
-			repairKindHang: "Startup hang",
-			repairKindLate: "Late rejection",
-			repairConflictTitle: "Handling a plugin install conflict",
-			repairConflictPluginLabel: "Conflicting entry",
-			repairConflictChangeLabel: "State change",
-			repairConflictAsk: "Inspect the entry ids and mounting of both sides, resolve the double mount, and tell me how to re-enable.",
-			repairStateEnabled: "On",
-			repairStateDisabled: "Off",
-			repairStateUninstalled: "Uninstalled"
+			"updateSection": "Update",
+			"checkUpdates": "Check for updates",
+			"checking": "Checking…",
+			"noUpdates": "The installed version is the latest.",
+			"update": "Update",
+			"updating": "Updating…",
+			"latest": "Latest {version}",
+			"updateRequiresDsh": "Requires DSH >= {min}",
+			"updateBlockedDsh": "Requires DSH >= {min}; upgrade DSH before updating",
+			"restartHint": "Plugin changes take effect after restarting the application.",
+			"failed": "Operation failed: {reason}",
+			"fetching": "Fetching plugin metadata…",
+			"downloading": "Downloading…",
+			"downloadingPercent": "Downloading {percent}%",
+			"extracting": "Extracting…",
+			"writing": "Writing configuration…",
+			"localOnlyTitle": "Available on this computer only",
+			"localOnlyBody": "To protect host configuration, plugin management is only available from a local browser."
 		};
 		const zh$11 = STATIC_ZH;
 		const en$11 = STATIC_EN;
@@ -1817,23 +1153,6 @@ window.__ModuleLoader__.load({
 		function parseInstalledPlugin(value) {
 			if (!isRecord$1(value) || value.plugin === void 0) throw new Error("plugin-manager: response must contain a plugin row");
 			return parsePlugin(value.plugin, 0);
-		}
-		/**
-		* Validate and normalize a plugin-control `list` / `set-enabled` response value.
-		* @param value - decoded but untrusted response value.
-		* @returns the typed control items.
-		*/
-		function parsePluginControlSnapshot(value) {
-			if (!isRecord$1(value) || !Array.isArray(value.controls)) throw new Error("plugin-manager: response must contain a controls array");
-			return value.controls.map((control, index) => {
-				if (!isRecord$1(control) || !isString(control.id) || !isString(control.name) || !isString(control.repository) || control.state !== "enabled" && control.state !== "disabled" && control.state !== "mixed" && control.state !== "unavailable" && control.state !== "uninstalled") throw new Error(`plugin-manager: control row ${String(index)} is invalid`);
-				return {
-					id: control.id,
-					name: control.name,
-					repository: control.repository,
-					state: control.state
-				};
-			});
 		}
 		/**
 		* Validate and normalize a `status` response value.
@@ -1987,7 +1306,6 @@ window.__ModuleLoader__.load({
 		});
 		const NS$10 = "settings.pluginManager";
 		const CHANNEL = "/plugin-installer";
-		const CONTROL_CHANNEL = "/plugin-control";
 		const LIST_ENDPOINT = "list";
 		const INSTALL_ENDPOINT = "install";
 		const UPDATE_ENDPOINT = "update";
@@ -1996,28 +1314,24 @@ window.__ModuleLoader__.load({
 		const CHECK_UPDATES_ENDPOINT = "check-updates";
 		const STATUS_ENDPOINT = "status";
 		const FAILURES_ENDPOINT = "failures";
-		const SET_SAFE_MODE_ENDPOINT = "set-safe-mode";
 		const GATEWAY_PREFIX = "api/plugin-manager";
 		/** Gateway job polling cadence. */
 		const JOB_POLL_MS = 500;
 		/** Gateway job wait ceiling (the host add deadline is six minutes). */
 		const JOB_WAIT_MS = 7 * 6e4;
-		/** Services required by the slot registration and both channels. */
+		/** Services required by the patch registration and both channels. */
 		const inject$12 = [
 			"slots",
 			"locale",
-			"connection",
-			"workspaces",
-			"sessions",
-			"uiWorkspace"
+			"connection"
 		];
 		/**
 		* Build the dual-channel face once: official-channel and gateway-channel
-		* implementations, the mode detection that picks between them, the repair
-		* handoff, and the change-notification listener set. The returned face is
-		* both the tab's injected props and the value provided as the
+		* implementations, the mode detection that picks between them, and the
+		* change-notification listener set. The returned face is both the update
+		* patch's injected props and the value provided as the
 		* `'pluginManager'` cordis service.
-		* @param ctx - the client context (connection, workspaces, sessions).
+		* @param ctx - the client context (connection).
 		* @returns the shared face.
 		*/
 		function createPluginManagerFace(ctx) {
@@ -2038,21 +1352,7 @@ window.__ModuleLoader__.load({
 				})),
 				checkUpdates: async () => parseUpdateList(await call(CHECK_UPDATES_ENDPOINT, {})),
 				status: async () => parseInstallStatus(await call(STATUS_ENDPOINT, {})),
-				failures: async () => parseFailuresSnapshot(await call(FAILURES_ENDPOINT, {})),
-				setSafeMode: async (enabled) => {
-					await call(SET_SAFE_MODE_ENDPOINT, { enabled });
-				},
-				controlsList: async () => parsePluginControlSnapshot(await connection.rpc.call(CONTROL_CHANNEL, "list", {}).then((result) => {
-					if (!result.ok) throw new Error(`plugin-control list failed: ${result.error.code}: ${result.error.message}`);
-					return result.value;
-				})),
-				controlsSetEnabled: async (pluginId, enabled) => parsePluginControlSnapshot(await connection.rpc.call(CONTROL_CHANNEL, "set-enabled", {
-					pluginId,
-					enabled
-				}).then((result) => {
-					if (!result.ok) throw new Error(`plugin-control set-enabled failed: ${result.error.code}: ${result.error.message}`);
-					return result.value;
-				}))
+				failures: async () => parseFailuresSnapshot(await call(FAILURES_ENDPOINT, {}))
 			};
 			const gatewayJson = async (path, init) => {
 				const response = await fetch(path, {
@@ -2083,8 +1383,6 @@ window.__ModuleLoader__.load({
 					});
 				}
 			};
-			/** The conflict ledger of the last settled gateway install. */
-			let lastInstallConflicts = [];
 			/** Whether a gateway install/remove is in flight (drives the progress row). */
 			let gatewayInflight = false;
 			const gateway = {
@@ -2097,9 +1395,7 @@ window.__ModuleLoader__.load({
 							body: JSON.stringify({ spec })
 						});
 						if (started.jobId === void 0) throw new Error("plugin-manager: gateway install returned no job");
-						const job = await waitJob(started.jobId);
-						lastInstallConflicts = Array.isArray(job.conflicts) ? job.conflicts : [];
-						return parseInstalledPlugin({ plugin: job.plugin });
+						return parseInstalledPlugin({ plugin: (await waitJob(started.jobId)).plugin });
 					} finally {
 						gatewayInflight = false;
 					}
@@ -2112,9 +1408,7 @@ window.__ModuleLoader__.load({
 							body: JSON.stringify({ id })
 						});
 						if (started.jobId === void 0) throw new Error("plugin-manager: gateway update returned no job");
-						const job = await waitJob(started.jobId);
-						lastInstallConflicts = Array.isArray(job.conflicts) ? job.conflicts : [];
-						return parseInstalledPlugin({ plugin: job.plugin });
+						return parseInstalledPlugin({ plugin: (await waitJob(started.jobId)).plugin });
 					} finally {
 						gatewayInflight = false;
 					}
@@ -2148,15 +1442,7 @@ window.__ModuleLoader__.load({
 					kind: "idle",
 					stage: "fetch"
 				},
-				failures: async () => parseFailuresSnapshot(await gatewayJson(`${GATEWAY_PREFIX}/failures`)),
-				setSafeMode: async () => {
-					throw new Error("plugin-manager: safe mode is unavailable in this runtime");
-				},
-				controlsList: async () => [],
-				controlsSetEnabled: async (pluginId, enabled) => {
-					await gateway.setEnabled(pluginId, enabled);
-					return [];
-				}
+				failures: async () => parseFailuresSnapshot(await gatewayJson(`${GATEWAY_PREFIX}/failures`))
 			};
 			let modePromise;
 			const ensureMode = () => {
@@ -2173,28 +1459,6 @@ window.__ModuleLoader__.load({
 					}
 				})();
 				return modePromise;
-			};
-			/**
-			* Start a repair conversation for a failed plugin: resolve a workspace over
-			* the plugin install root (created once, reused after), open a fresh
-			* session there, and seed its first prompt with the failure details. The
-			* session's workspace is the plugin home so the agent's file tools reach
-			* the plugin code without leaving the workspace boundary.
-			* @param pluginRoot - absolute plugin install root.
-			* @param message - the seeded first user message.
-			* @returns resolution after the prompt is accepted and the session opens.
-			*/
-			const repairPlugin = async (pluginRoot, message) => {
-				const workspace = await ctx.workspaces.create({ path: pluginRoot });
-				const sessionId = await ctx.sessions.create({ workspaceId: workspace.workspaceId });
-				const binding = ctx.sessions.binding(sessionId);
-				if (binding === void 0) throw new Error(`plugin-manager: repair session ${sessionId} is unavailable`);
-				const result = await binding.session.prompt([{
-					type: "text",
-					text: message
-				}], "queue");
-				if (!result.ok) throw new Error(`plugin-manager: repair prompt failed: ${result.error.code}: ${result.error.message}`);
-				ctx.uiWorkspace.openSession(sessionId);
 			};
 			/** Listeners subscribed through onChange; fired after successful mutations. */
 			const listeners = /* @__PURE__ */ new Set();
@@ -2230,11 +1494,6 @@ window.__ModuleLoader__.load({
 				checkUpdates: async () => await ensureMode() === "official" ? official.checkUpdates() : gateway.checkUpdates(),
 				status: async () => await ensureMode() === "official" ? official.status() : gateway.status(),
 				failures: async () => await ensureMode() === "official" ? official.failures() : gateway.failures(),
-				setSafeMode: async (enabled) => await ensureMode() === "official" ? official.setSafeMode(enabled) : gateway.setSafeMode(),
-				repairPlugin,
-				controlsList: async () => await ensureMode() === "official" ? official.controlsList() : gateway.controlsList(),
-				controlsSetEnabled: async (id, enabled) => await ensureMode() === "official" ? official.controlsSetEnabled(id, enabled) : gateway.controlsSetEnabled(id, enabled),
-				lastInstallConflicts: () => lastInstallConflicts,
 				onChange: (cb) => {
 					listeners.add(cb);
 					return () => {
@@ -2243,7 +1502,7 @@ window.__ModuleLoader__.load({
 				}
 			};
 		}
-		/** Contribute the family plugin-manager tab and provide the shared face. */
+		/** Contribute the check-for-updates patch and provide the shared face. */
 		function apply$12(ctx) {
 			reportDailyHeartbeat$7([{ name: "@linxin666/dsh-client-ui-plugin-manager" }]);
 			ctx.effect(() => {
@@ -2260,16 +1519,15 @@ window.__ModuleLoader__.load({
 			try {
 				if (!ctx.get("pluginManager")) ctx.provide(PLUGIN_MANAGER_SERVICE, face);
 			} catch {}
-			ctx.slots.inject("settings.plugins.tab", () => {
+			ctx.slots.inject("plugins.detail.section", () => {
 				try {
 					return ctx.slots.register({
-						name: "settings.plugins.tab",
-						id: "family-plugins",
-						order: 20,
-						label: () => ctx.locale.bind(NS$10)("tab"),
+						name: "plugins.detail.section",
+						id: "family-update-check",
+						order: 30,
 						locale: NS$10,
 						inject: () => face
-					}, PluginManagerTab);
+					}, PluginUpdatePatch);
 				} catch {
 					return () => {};
 				}
@@ -5507,6 +4765,8 @@ window.__ModuleLoader__.load({
 		function currentOf(sessions) {
 			return sessions?.current();
 		}
+		/** Stable id shared by the board's sidebar panel row and its main-slot page. */
+		const TASK_BOARD_PANEL_ID = "task-board";
 		/** The selected task (resolved from the ledger), or undefined. */
 		function selectedTaskOf(snapshot) {
 			if (snapshot.selectedTaskId === void 0) return void 0;
@@ -5604,18 +4864,53 @@ window.__ModuleLoader__.load({
 			async retryHostSync() {
 				return await this.initializeRemote();
 			}
+			/**
+			* Show the board. The layout owns which panel the center column renders, so
+			* the state flip and the panel selection travel together here; a composition
+			* with no layout face (tests, a shell-less host) still flips the state.
+			*
+			* The selection is requested AFTER the snapshot flips so a subscriber
+			* rendering against `boardOpen` never observes "open" while the shell still
+			* shows the conversation.
+			*/
 			openBoard() {
 				if (this.boardOpen) return;
 				this.boardOpen = true;
 				this.notify();
+				this.selectPanel(TASK_BOARD_PANEL_ID);
 			}
+			/**
+			* Return the center column to the conversation. The layout's own selection is
+			* the source of truth for what the column renders, so this asks for the
+			* conversation explicitly rather than only clearing local state.
+			*/
 			closeBoard() {
 				this.boardOpen = false;
 				this.notify();
+				this.selectPanel(null);
 			}
 			toggleBoard() {
 				if (this.boardOpen) this.closeBoard();
 				else this.openBoard();
+			}
+			/**
+			* Reflect a panel selection that came from OUTSIDE this controller (the user
+			* clicked another sidebar row, or the layout dropped the panel id). Keeps
+			* `boardOpen` aligned with what the column actually shows without asking the
+			* layout to select anything back.
+			* @param panelId - the layout's current panel id, or null for the conversation.
+			*/
+			syncPanelSelection(panelId) {
+				const open = panelId === TASK_BOARD_PANEL_ID;
+				if (open === this.boardOpen) return;
+				this.boardOpen = open;
+				this.notify();
+			}
+			/** Ask the layout to select a panel; a shell that serves no layout face is a no-op. */
+			selectPanel(panelId) {
+				try {
+					this.deps.panel?.select(panelId);
+				} catch {}
 			}
 			/**
 			* Switch between the kanban columns and the archive view. Leaving the
@@ -5897,8 +5192,8 @@ window.__ModuleLoader__.load({
 			* (background navigation, the Host runner creating and selecting a fresh
 			* execution session, settlement, other plugins), so closing on `current`
 			* changes would evict the board without the user asking. The board closes
-			* only on explicit user navigation: a sidebar session/workspace row click
-			* (board-mount onClickSidebarRow) or the board's own actions
+			* only on explicit user navigation: selecting another panel (the layout owns
+			* selection, and `syncPanelSelection` follows it) or the board's own actions
 			* (openSession / close). Keeping the hook preserves the subscription
 			* contract for future listeners.
 			*/
@@ -7014,7 +6309,7 @@ window.__ModuleLoader__.load({
 		}
 		//#endregion
 		//#region \0dsh-css:packages/dsh-task-board/src/client/board.module.css.mjs
-		const css$12 = "[data-pane=conversation],[class*=centerCol]{position:relative}[data-dsh-taskboard-view]{z-index:60;background:var(--dsw-alias-bg-base);display:none;position:absolute;inset:0;container:_7D6uKa_task-board-view/inline-size}html[data-dsh-taskboard-active]:not([data-dsh-ssh-active]) [data-dsh-taskboard-view]{display:block}html[data-dsh-taskboard-active]:not([data-dsh-ssh-active]) [data-pane=conversation]>:not([data-dsh-taskboard-view]),html[data-dsh-taskboard-active]:not([data-dsh-ssh-active]) [class*=centerCol]>:not([data-dsh-taskboard-view]){display:none!important}._7D6uKa_entry{box-sizing:border-box;min-height:36px;color:var(--dsw-alias-label-primary);cursor:pointer;font:inherit;text-align:left;white-space:nowrap;background:0 0;border:none;border-radius:12px;align-items:center;gap:8px;margin:0 2px;padding:7px 8px;font-size:14px;line-height:22px;display:flex}._7D6uKa_entry:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}._7D6uKa_entry[data-active]{background:var(--dsw-alias-interactive-bg-active);color:var(--dsw-alias-label-primary);font-weight:600}._7D6uKa_entryIcon{flex:none;justify-content:center;align-items:center;width:16px;height:16px;display:inline-flex}._7D6uKa_entryIcon svg{width:16px;height:16px;display:block}._7D6uKa_entryLabel{text-overflow:ellipsis;overflow:hidden}[data-dsh-frame][data-sidebar-collapsed] ._7D6uKa_entry,[data-sidebar-collapsed] ._7D6uKa_entry{border-radius:12px;justify-content:center;width:36px;height:36px;margin:0 auto 12px;padding:0}[data-dsh-frame][data-sidebar-collapsed] ._7D6uKa_entryIcon,[data-sidebar-collapsed] ._7D6uKa_entryIcon,[data-dsh-frame][data-sidebar-collapsed] ._7D6uKa_entryIcon svg,[data-sidebar-collapsed] ._7D6uKa_entryIcon svg{width:18px;height:18px}[data-dsh-frame][data-sidebar-collapsed] ._7D6uKa_entryLabel,[data-sidebar-collapsed] ._7D6uKa_entryLabel{display:none}._7D6uKa_board{box-sizing:border-box;background:var(--dsw-alias-bg-base);min-width:0;height:100%;min-height:0;color:var(--dsw-alias-label-primary);font-family:var(--dsw-font-family);flex-direction:column;gap:12px;padding:14px 16px 16px;display:flex}._7D6uKa_boardHeader{flex:none;align-items:center;gap:10px;display:flex}._7D6uKa_boardTitle{color:var(--dsw-alias-label-primary);white-space:nowrap;margin:0;font-size:16px;font-weight:700}._7D6uKa_backButton{align-items:center;gap:4px;display:inline-flex}._7D6uKa_search{min-width:120px;color:var(--dsw-alias-label-primary);background:var(--dsw-specific-input-major);border:1px solid var(--dsw-alias-border-l2);border-radius:8px;outline:none;flex:0 260px;padding:6px 10px;font-size:13px}._7D6uKa_search::placeholder{color:var(--dsw-alias-label-tertiary)}._7D6uKa_columns{overscroll-behavior-inline:contain;scrollbar-color:var(--dsw-alias-border-l3) var(--dsw-alias-interactive-bg-hover);scrollbar-width:thin;flex:1;grid-auto-columns:minmax(220px,1fr);grid-auto-flow:column;gap:12px;min-height:0;padding-bottom:6px;display:grid;overflow:auto hidden}._7D6uKa_columns::-webkit-scrollbar{height:10px}._7D6uKa_columns::-webkit-scrollbar-track{background:var(--dsw-alias-interactive-bg-hover);border-radius:999px}._7D6uKa_columns::-webkit-scrollbar-thumb{background:var(--dsw-alias-border-l3);background-clip:content-box;border:2px solid #0000;border-radius:999px}._7D6uKa_columns::-webkit-scrollbar-thumb:hover{background:var(--dsw-alias-border-l4);background-clip:content-box}._7D6uKa_column{background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l1);border-radius:12px;flex-direction:column;min-height:0;display:flex;overflow:hidden}._7D6uKa_columnHeader{flex:none;align-items:center;gap:6px;padding:10px 12px;display:flex}._7D6uKa_columnTitle{color:var(--dsw-alias-label-primary);text-overflow:ellipsis;white-space:nowrap;flex:1;margin:0;font-size:13px;font-weight:700;overflow:hidden}._7D6uKa_columnCount{min-width:0;color:var(--dsw-alias-label-tertiary);background:var(--dsw-alias-interactive-bg-hover);border-radius:999px;flex:none;padding:1px 8px;font-size:12px}._7D6uKa_statusDot{border-radius:50%;flex:none;width:8px;height:8px}._7D6uKa_statusDot[data-status=backlog]{background:var(--dsw-alias-label-tertiary)}._7D6uKa_statusDot[data-status=todo]{background:var(--dsw-alias-state-business-primary)}._7D6uKa_statusDot[data-status=running]{background:var(--dsw-alias-state-warn-primary)}._7D6uKa_statusDot[data-status=done]{background:var(--dsw-alias-state-success-primary)}._7D6uKa_statusDot[data-status=failed]{background:var(--dsw-alias-state-error-primary)}._7D6uKa_cards{flex-direction:column;flex:1;gap:8px;min-height:0;padding:2px 8px 10px;display:flex;overflow-y:auto}._7D6uKa_columnEmpty{text-align:center;color:var(--dsw-alias-label-tertiary);padding:24px 8px;font-size:12px}._7D6uKa_card{text-align:left;background:var(--dsw-alias-bg-base);border:1px solid var(--dsw-alias-border-l2);cursor:pointer;color:var(--dsw-alias-label-primary);border-radius:10px;flex-direction:column;gap:6px;padding:10px 12px;font-family:inherit;transition:box-shadow .12s,border-color .12s,transform .12s;display:flex}._7D6uKa_card:hover{box-shadow:var(--dsw-shadow-lv2);border-color:var(--dsw-alias-border-l3);transform:translateY(-1px)}._7D6uKa_card[data-status=running]{border-color:var(--dsw-alias-state-warn-primary)}._7D6uKa_cardTitle{-webkit-line-clamp:2;-webkit-box-orient:vertical;font-size:13px;font-weight:600;line-height:1.35;display:-webkit-box;overflow:hidden}._7D6uKa_cardExcerpt{color:var(--dsw-alias-label-secondary);-webkit-line-clamp:2;-webkit-box-orient:vertical;font-size:12px;line-height:1.4;display:-webkit-box;overflow:hidden}._7D6uKa_cardMeta{color:var(--dsw-alias-label-tertiary);align-items:center;gap:8px;font-size:11px;display:flex}._7D6uKa_cardTime{text-overflow:ellipsis;white-space:nowrap;flex:1;overflow:hidden}._7D6uKa_cardSchedule{white-space:nowrap;min-width:0;color:var(--dsw-alias-label-secondary);background:var(--dsw-alias-interactive-bg-hover);border-radius:999px;flex:none;padding:2px 6px;font-size:12px;line-height:1}._7D6uKa_cardRun{flex:none}._7D6uKa_cardRun[data-result=failed]{color:var(--dsw-alias-state-error-primary)}._7D6uKa_cardRun[data-result=succeeded]{color:var(--dsw-alias-state-success-primary)}._7D6uKa_cardSession{color:var(--dsw-alias-state-business-primary);flex:none}._7D6uKa_cardRunningLabel{color:var(--dsw-alias-state-warn-primary);font-size:11px}._7D6uKa_cardSpinner{border:2px solid var(--dsw-alias-state-warn-primary);border-top-color:#0000;border-radius:50%;flex:none;width:10px;height:10px;animation:.8s linear infinite _7D6uKa_dshTbSpin}@keyframes _7D6uKa_dshTbSpin{to{transform:rotate(360deg)}}._7D6uKa_primaryButton{color:var(--dsw-alias-label-primary-foreground);background:var(--dsw-alias-button-info-fill);cursor:pointer;white-space:nowrap;border:none;border-radius:8px;padding:6px 14px;font-size:13px;font-weight:600}._7D6uKa_primaryButton:hover:not(:disabled){background:var(--dsw-alias-button-info-hover)}._7D6uKa_primaryButton:disabled{opacity:.5;cursor:default}._7D6uKa_ghostButton{color:var(--dsw-alias-label-primary);border:1px solid var(--dsw-alias-border-l2);cursor:pointer;white-space:nowrap;background:0 0;border-radius:8px;padding:5px 12px;font-size:12px}._7D6uKa_ghostButton:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}._7D6uKa_ghostButton:disabled{opacity:.45;cursor:default}._7D6uKa_dangerButton{color:#fff;background:var(--dsw-alias-state-error-primary);cursor:pointer;white-space:nowrap;border:none;border-radius:8px;padding:6px 14px;font-size:13px;font-weight:600}._7D6uKa_dangerButton:hover:not(:disabled){filter:brightness(1.08)}._7D6uKa_dangerButton:active:not(:disabled){filter:brightness(.94)}._7D6uKa_dangerButton:disabled{opacity:.5;cursor:default}._7D6uKa_iconButton{width:26px;height:26px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:6px;justify-content:center;align-items:center;padding:0;font-size:13px;display:inline-flex}._7D6uKa_iconButton:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}._7D6uKa_linkButton{color:var(--dsw-alias-state-business-primary);cursor:pointer;white-space:nowrap;background:0 0;border:none;padding:0;font-size:12px}._7D6uKa_linkButton:hover{text-decoration:underline}._7D6uKa_modalBackdrop{z-index:1300;background:var(--dsw-alias-bg-mask-1);justify-content:center;align-items:center;display:flex;position:fixed;inset:0}._7D6uKa_modal{background:var(--dsw-alias-bg-base);border:1px solid var(--dsw-alias-border-l2);width:min(520px,100vw - 48px);max-height:calc(100vh - 96px);box-shadow:var(--dsw-shadow-lv3);color:var(--dsw-alias-label-primary);border-radius:14px;flex-direction:column;gap:12px;padding:18px;display:flex;overflow-y:auto}._7D6uKa_modalTitle{margin:0;font-size:15px;font-weight:700}._7D6uKa_confirmMessage{color:var(--dsw-alias-label-secondary);white-space:pre-wrap;overflow-wrap:anywhere;margin:0;font-size:13px;line-height:1.5}._7D6uKa_modalFooter{justify-content:flex-end;gap:10px;margin-top:4px;display:flex}._7D6uKa_field{flex-direction:column;gap:5px;display:flex}._7D6uKa_fieldLabel{color:var(--dsw-alias-label-secondary);font-size:12px;font-weight:600}._7D6uKa_input{color:var(--dsw-alias-label-primary);background:var(--dsw-specific-input-major);border:1px solid var(--dsw-alias-border-l2);resize:vertical;border-radius:8px;outline:none;padding:7px 10px;font-family:inherit;font-size:13px}._7D6uKa_input:focus{border-color:var(--dsw-alias-state-business-primary)}._7D6uKa_select{color:var(--dsw-alias-label-primary);background:var(--dsw-specific-input-major);border:1px solid var(--dsw-alias-border-l2);border-radius:8px;outline:none;max-width:100%;padding:7px 10px;font-family:inherit;font-size:13px}._7D6uKa_input::placeholder{color:var(--dsw-alias-label-tertiary)}._7D6uKa_formError{color:var(--dsw-alias-state-error-primary);margin:0;font-size:12px}._7D6uKa_detail{background:var(--dsw-alias-bg-base);border:1px solid var(--dsw-alias-border-l2);width:min(640px,100vw - 48px);max-height:calc(100vh - 80px);box-shadow:var(--dsw-shadow-lv3);color:var(--dsw-alias-label-primary);border-radius:14px;flex-direction:column;display:flex;overflow:hidden}._7D6uKa_detailHeader{border-bottom:1px solid var(--dsw-alias-separator-primary);flex:none;align-items:center;gap:10px;padding:14px 18px;display:flex}._7D6uKa_detailTitle{overflow-wrap:anywhere;flex:1;margin:0;font-size:15px;font-weight:700}._7D6uKa_statusBadge{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);border-radius:999px;flex:none;padding:2px 10px;font-size:12px}._7D6uKa_statusBadge[data-status=running]{color:var(--dsw-alias-state-warn-primary);border-color:var(--dsw-alias-state-warn-primary)}._7D6uKa_statusBadge[data-status=done]{color:var(--dsw-alias-state-success-primary);border-color:var(--dsw-alias-state-success-primary)}._7D6uKa_statusBadge[data-status=failed]{color:var(--dsw-alias-state-error-primary);border-color:var(--dsw-alias-state-error-primary)}._7D6uKa_detailBody{flex-direction:column;flex:1;gap:16px;padding:14px 18px;display:flex;overflow-y:auto}._7D6uKa_detailSection{flex-direction:column;gap:6px;display:flex}._7D6uKa_detailSection h4{color:var(--dsw-alias-label-tertiary);text-transform:none;margin:0;font-size:12px;font-weight:700}._7D6uKa_detailText{color:var(--dsw-alias-label-primary);white-space:pre-wrap;overflow-wrap:anywhere;margin:0;font-size:13px;line-height:1.55}._7D6uKa_scheduleToggle{color:var(--dsw-alias-label-primary);cursor:pointer;user-select:none;align-items:center;gap:8px;font-size:13px;display:flex}._7D6uKa_scheduleToggle input{accent-color:var(--dsw-alias-state-business-primary)}._7D6uKa_scheduleRow{align-items:center;gap:8px;display:flex}._7D6uKa_scheduleInput{min-width:0;font-family:var(--dsw-font-markdown-code-block-small);flex:1;font-size:12.5px}._7D6uKa_scheduleInputInvalid,._7D6uKa_scheduleInputInvalid:focus{border-color:var(--dsw-alias-state-error-primary)}._7D6uKa_schedulePreset{color:var(--dsw-alias-label-primary);background:var(--dsw-specific-input-major);border:1px solid var(--dsw-alias-border-l2);border-radius:8px;outline:none;flex:none;padding:7px 8px;font-size:12.5px}._7D6uKa_scheduleMeta{color:var(--dsw-alias-label-secondary);overflow-wrap:anywhere;margin:0;font-size:12px}._7D6uKa_promptBlock{font-size:12.5px;line-height:1.5;font-family:var(--dsw-font-markdown-code-block-small);color:var(--dsw-alias-label-primary);background:var(--dsw-alias-markdown-code-block);border:1px solid var(--dsw-alias-border-l1);white-space:pre-wrap;overflow-wrap:anywhere;border-radius:8px;max-height:240px;margin:0;padding:10px 12px;overflow-y:auto}._7D6uKa_executionList{flex-direction:column;gap:8px;margin:0;padding:0;list-style:none;display:flex}._7D6uKa_executionRow{border:1px solid var(--dsw-alias-border-l1);border-radius:8px;flex-wrap:wrap;align-items:center;gap:10px;padding:8px 10px;display:flex}._7D6uKa_executionBadge{color:var(--dsw-alias-state-warn-primary);background:var(--dsw-alias-state-warn-secondary);border-radius:999px;flex:none;padding:1px 8px;font-size:11px;font-weight:600}._7D6uKa_executionBadge[data-result=succeeded]{color:var(--dsw-alias-state-success-primary);background:0 0}._7D6uKa_executionBadge[data-result=failed]{color:var(--dsw-alias-state-error-primary);background:0 0}._7D6uKa_executionBadge[data-result=cancelled]{color:var(--dsw-alias-label-tertiary);background:0 0}._7D6uKa_executionTimes{color:var(--dsw-alias-label-secondary);font-size:12px}._7D6uKa_executionError{width:100%;color:var(--dsw-alias-state-error-primary);overflow-wrap:anywhere;font-size:12px}._7D6uKa_moveRow{flex-wrap:wrap;gap:8px;display:flex}._7D6uKa_detailFooter{border-top:1px solid var(--dsw-alias-separator-primary);flex:none;align-items:center;gap:10px;padding:12px 18px;display:flex}._7D6uKa_detailMeta{color:var(--dsw-alias-label-tertiary);margin-left:auto;font-size:11px}@container _7D6uKa_task-board-view (width<=768px){._7D6uKa_board{gap:10px;padding:10px}._7D6uKa_boardHeader{flex-wrap:wrap;align-items:center;gap:8px}._7D6uKa_backButton{flex:none;order:1}._7D6uKa_boardTitle{flex:auto;order:2}._7D6uKa_boardHeader>._7D6uKa_detailMeta{flex:1 0 100%;order:3;margin-left:0}._7D6uKa_search{flex:1 0 100%;order:4;min-width:0}._7D6uKa_boardHeader>button:not(._7D6uKa_backButton){flex:1 1 0;order:5;min-width:0}._7D6uKa_columns{scroll-snap-type:inline mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch;grid-auto-columns:86cqw;gap:10px;padding-inline:2px 14cqw;scroll-padding-inline:2px}._7D6uKa_columns::-webkit-scrollbar{display:none}._7D6uKa_column{scroll-snap-align:start;scroll-snap-stop:always}}@container _7D6uKa_task-board-view (width<=720px){._7D6uKa_boardHeader>._7D6uKa_detailMeta{text-overflow:ellipsis;white-space:nowrap;overflow:hidden}}@container _7D6uKa_task-board-view (width<=600px){._7D6uKa_board{padding-inline:8px}}@media (width<=768px){[data-dsh-taskboard-view]{height:100dvh}._7D6uKa_entry,._7D6uKa_card,._7D6uKa_primaryButton,._7D6uKa_ghostButton,._7D6uKa_dangerButton,._7D6uKa_iconButton,._7D6uKa_linkButton,._7D6uKa_search,._7D6uKa_input,._7D6uKa_select,._7D6uKa_schedulePreset,._7D6uKa_scheduleToggle{min-height:44px}._7D6uKa_search,._7D6uKa_input,._7D6uKa_select,._7D6uKa_schedulePreset{box-sizing:border-box;font-size:16px}._7D6uKa_modalBackdrop{justify-content:stretch;align-items:stretch;width:100vw;height:100dvh}._7D6uKa_modal,._7D6uKa_detail{box-sizing:border-box;border:0;border-radius:0;width:100vw;height:100dvh;max-height:none}._7D6uKa_modal{padding-top:max(16px, env(safe-area-inset-top));padding-right:max(16px, env(safe-area-inset-right));padding-bottom:max(16px, env(safe-area-inset-bottom));padding-left:max(16px, env(safe-area-inset-left))}._7D6uKa_modalFooter{z-index:1;background:var(--dsw-alias-bg-base);flex-wrap:wrap;padding-top:8px;position:sticky;bottom:0}._7D6uKa_modalFooter>button{flex:120px}._7D6uKa_detailHeader{padding-top:max(12px, env(safe-area-inset-top));padding-right:max(14px, env(safe-area-inset-right));padding-left:max(14px, env(safe-area-inset-left));flex-wrap:wrap}._7D6uKa_detailTitle{min-width:0}._7D6uKa_detailBody{overscroll-behavior-y:contain;padding-right:max(14px, env(safe-area-inset-right));padding-left:max(14px, env(safe-area-inset-left))}._7D6uKa_detailFooter{padding-right:max(14px, env(safe-area-inset-right));padding-bottom:max(12px, env(safe-area-inset-bottom));padding-left:max(14px, env(safe-area-inset-left));flex-wrap:wrap}._7D6uKa_detailFooter>button{flex:96px}._7D6uKa_detailFooter>._7D6uKa_detailMeta{text-align:end;flex:1 0 100%;margin-left:0}._7D6uKa_scheduleRow{flex-direction:column;align-items:stretch}._7D6uKa_schedulePreset{width:100%}}._7D6uKa_entry:focus-visible,._7D6uKa_card:focus-visible,._7D6uKa_primaryButton:focus-visible,._7D6uKa_ghostButton:focus-visible,._7D6uKa_dangerButton:focus-visible,._7D6uKa_iconButton:focus-visible,._7D6uKa_linkButton:focus-visible,._7D6uKa_search:focus-visible,._7D6uKa_input:focus-visible,._7D6uKa_select:focus-visible,._7D6uKa_schedulePreset:focus-visible,._7D6uKa_scheduleToggle input:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary);outline-offset:2px}._7D6uKa_entry,._7D6uKa_primaryButton,._7D6uKa_ghostButton,._7D6uKa_dangerButton,._7D6uKa_iconButton,._7D6uKa_linkButton,._7D6uKa_search,._7D6uKa_input,._7D6uKa_select,._7D6uKa_schedulePreset,._7D6uKa_scheduleToggle input{transition:background-color .12s,color .12s,border-color .12s,outline-color .12s,box-shadow .12s,transform .12s}._7D6uKa_card:active{box-shadow:var(--dsw-shadow-lv1);transform:translateY(0)}._7D6uKa_entry:active,._7D6uKa_primaryButton:active:not(:disabled),._7D6uKa_ghostButton:active:not(:disabled),._7D6uKa_dangerButton:active:not(:disabled),._7D6uKa_iconButton:active:not(:disabled),._7D6uKa_linkButton:active:not(:disabled){transform:translateY(1px)}._7D6uKa_entry[data-active]:hover{background:var(--dsw-specific-sidebar-nav-item-active)}._7D6uKa_iconButton:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}._7D6uKa_linkButton:hover:not(:disabled){text-decoration:underline}._7D6uKa_iconButton:disabled,._7D6uKa_linkButton:disabled{opacity:.45;cursor:default}._7D6uKa_search:focus,._7D6uKa_select:focus,._7D6uKa_schedulePreset:focus{border-color:var(--dsw-alias-state-business-primary)}._7D6uKa_scheduleToggle input{margin:0}@media (prefers-reduced-motion:reduce){._7D6uKa_entry,._7D6uKa_card,._7D6uKa_primaryButton,._7D6uKa_ghostButton,._7D6uKa_dangerButton,._7D6uKa_iconButton,._7D6uKa_linkButton,._7D6uKa_search,._7D6uKa_input,._7D6uKa_select,._7D6uKa_schedulePreset,._7D6uKa_scheduleToggle input{transition:none}._7D6uKa_cardSpinner{animation:none}}._7D6uKa_cardTags{flex-wrap:wrap;gap:4px;display:flex}._7D6uKa_cardTag{border:1px solid var(--dsh-task-tag-border);background:var(--dsh-task-tag-fill);max-width:100%;color:var(--dsw-alias-label-primary);text-overflow:ellipsis;white-space:nowrap;border-radius:999px;padding:0 7px;font-size:10px;line-height:16px;overflow:hidden}._7D6uKa_tagFilter{flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 10px;display:flex}._7D6uKa_tagFilterLabel{color:var(--dsw-alias-label-tertiary);font-size:11px}._7D6uKa_tagChip{border:1px solid var(--dsh-task-tag-border);color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border-radius:999px;padding:1px 9px;font-family:inherit;font-size:11px;line-height:18px}._7D6uKa_tagChip[data-active=true]{background:var(--dsh-task-tag-fill);color:var(--dsw-alias-label-primary)}._7D6uKa_cardTag[data-tag-tone=\"0\"],._7D6uKa_tagChip[data-tag-tone=\"0\"]{--dsh-task-tag-fill:#4e93e82e;--dsh-task-tag-border:#4e93e866}._7D6uKa_cardTag[data-tag-tone=\"1\"],._7D6uKa_tagChip[data-tag-tone=\"1\"]{--dsh-task-tag-fill:#2ea36a2e;--dsh-task-tag-border:#2ea36a66}._7D6uKa_cardTag[data-tag-tone=\"2\"],._7D6uKa_tagChip[data-tag-tone=\"2\"]{--dsh-task-tag-fill:#d08a2a2e;--dsh-task-tag-border:#d08a2a66}._7D6uKa_cardTag[data-tag-tone=\"3\"],._7D6uKa_tagChip[data-tag-tone=\"3\"]{--dsh-task-tag-fill:#b456c82e;--dsh-task-tag-border:#b456c866}._7D6uKa_cardTag[data-tag-tone=\"4\"],._7D6uKa_tagChip[data-tag-tone=\"4\"]{--dsh-task-tag-fill:#cf5f7a2e;--dsh-task-tag-border:#cf5f7a66}._7D6uKa_cardTag[data-tag-tone=\"5\"],._7D6uKa_tagChip[data-tag-tone=\"5\"]{--dsh-task-tag-fill:#4a9fb52e;--dsh-task-tag-border:#4a9fb566}._7D6uKa_fieldHint{color:var(--dsw-alias-label-tertiary);font-size:11px;line-height:1.4}._7D6uKa_tagRow{align-items:center;gap:6px;display:flex}._7D6uKa_tagRow ._7D6uKa_input{flex:1 1 0;min-width:0}._7D6uKa_tagRow ._7D6uKa_ghostButton{flex:none}._7D6uKa_tagAddButton{align-self:flex-start}._7D6uKa_projectFilter{flex:none;align-items:center;gap:6px;display:flex}._7D6uKa_projectFilterLabel{color:var(--dsw-alias-label-secondary);white-space:nowrap;font-size:12px}._7D6uKa_projectDialog{background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2);border-radius:10px;flex-direction:column;flex:none;gap:8px;margin-bottom:8px;padding:10px 12px;display:flex}._7D6uKa_projectDialogActions{justify-content:flex-end;gap:8px;display:flex}._7D6uKa_aiParse{background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2);border-radius:10px;flex-direction:column;gap:6px;padding:10px 12px;display:flex}._7D6uKa_aiParseRow{align-items:center;gap:8px;display:flex}._7D6uKa_aiParseRow ._7D6uKa_select{flex:1 1 0;min-width:0}._7D6uKa_aiParseRow ._7D6uKa_ghostButton,._7D6uKa_aiParseRow ._7D6uKa_primaryButton{flex:none}._7D6uKa_cardSubtask{border:1px solid var(--dsw-alias-border-l2);max-width:100%;color:var(--dsw-alias-label-secondary);text-overflow:ellipsis;white-space:nowrap;background:0 0;border-radius:999px;padding:0 7px;font-size:10px;line-height:16px;overflow:hidden}._7D6uKa_cardSubtask[data-tone=failed]{color:var(--dsw-alias-state-error-primary);border-color:var(--dsw-alias-state-error-primary)}._7D6uKa_cardSubtask[data-tone=running]{color:var(--dsw-alias-state-warn-primary);border-color:var(--dsw-alias-state-warn-primary)}._7D6uKa_cardSubtask[data-tone=done]{color:var(--dsw-alias-state-success-primary);border-color:var(--dsw-alias-state-success-primary)}._7D6uKa_subtaskList{flex-direction:column;gap:6px;margin:0;padding:0;list-style:none;display:flex}._7D6uKa_subtaskRow{border:1px solid var(--dsw-alias-border-l1);border-radius:8px;flex-wrap:wrap;align-items:center;gap:10px;padding:6px 10px;display:flex}._7D6uKa_subtaskRow ._7D6uKa_linkButton:first-child{text-align:left;overflow-wrap:anywhere;flex:auto;min-width:0}._7D6uKa_subtaskAddRow{flex-wrap:wrap;gap:8px;display:flex}._7D6uKa_pickList{flex-direction:column;gap:6px;max-height:320px;margin:0;padding:0;list-style:none;display:flex;overflow-y:auto}._7D6uKa_pickRow{border:1px solid var(--dsw-alias-border-l1);border-radius:8px;align-items:center;gap:10px;padding:6px 10px;display:flex}._7D6uKa_pickTitle{min-width:0;color:var(--dsw-alias-label-primary);overflow-wrap:anywhere;flex:auto;font-size:13px}";
+		const css$12 = "[data-dsh-taskboard-view]{box-sizing:border-box;background:var(--dsw-alias-bg-base);flex-direction:column;width:100%;min-width:0;height:100%;min-height:0;display:flex;container:_7D6uKa_task-board-view/inline-size}._7D6uKa_board{box-sizing:border-box;background:var(--dsw-alias-bg-base);min-width:0;height:100%;min-height:0;color:var(--dsw-alias-label-primary);font-family:var(--dsw-font-family);flex-direction:column;gap:12px;padding:14px 16px 16px;display:flex}._7D6uKa_boardHeader{flex:none;align-items:center;gap:10px;display:flex}._7D6uKa_boardTitle{color:var(--dsw-alias-label-primary);white-space:nowrap;margin:0;font-size:16px;font-weight:700}._7D6uKa_backButton{align-items:center;gap:4px;display:inline-flex}._7D6uKa_search{min-width:120px;color:var(--dsw-alias-label-primary);background:var(--dsw-specific-input-major);border:1px solid var(--dsw-alias-border-l2);border-radius:8px;outline:none;flex:0 260px;padding:6px 10px;font-size:13px}._7D6uKa_search::placeholder{color:var(--dsw-alias-label-tertiary)}._7D6uKa_columns{overscroll-behavior-inline:contain;scrollbar-color:var(--dsw-alias-border-l3) var(--dsw-alias-interactive-bg-hover);scrollbar-width:thin;flex:1;grid-auto-columns:minmax(220px,1fr);grid-auto-flow:column;gap:12px;min-height:0;padding-bottom:6px;display:grid;overflow:auto hidden}._7D6uKa_columns::-webkit-scrollbar{height:10px}._7D6uKa_columns::-webkit-scrollbar-track{background:var(--dsw-alias-interactive-bg-hover);border-radius:999px}._7D6uKa_columns::-webkit-scrollbar-thumb{background:var(--dsw-alias-border-l3);background-clip:content-box;border:2px solid #0000;border-radius:999px}._7D6uKa_columns::-webkit-scrollbar-thumb:hover{background:var(--dsw-alias-border-l4);background-clip:content-box}._7D6uKa_column{background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l1);border-radius:12px;flex-direction:column;min-height:0;display:flex;overflow:hidden}._7D6uKa_columnHeader{flex:none;align-items:center;gap:6px;padding:10px 12px;display:flex}._7D6uKa_columnTitle{color:var(--dsw-alias-label-primary);text-overflow:ellipsis;white-space:nowrap;flex:1;margin:0;font-size:13px;font-weight:700;overflow:hidden}._7D6uKa_columnCount{min-width:0;color:var(--dsw-alias-label-tertiary);background:var(--dsw-alias-interactive-bg-hover);border-radius:999px;flex:none;padding:1px 8px;font-size:12px}._7D6uKa_statusDot{border-radius:50%;flex:none;width:8px;height:8px}._7D6uKa_statusDot[data-status=backlog]{background:var(--dsw-alias-label-tertiary)}._7D6uKa_statusDot[data-status=todo]{background:var(--dsw-alias-state-business-primary)}._7D6uKa_statusDot[data-status=running]{background:var(--dsw-alias-state-warn-primary)}._7D6uKa_statusDot[data-status=done]{background:var(--dsw-alias-state-success-primary)}._7D6uKa_statusDot[data-status=failed]{background:var(--dsw-alias-state-error-primary)}._7D6uKa_cards{flex-direction:column;flex:1;gap:8px;min-height:0;padding:2px 8px 10px;display:flex;overflow-y:auto}._7D6uKa_columnEmpty{text-align:center;color:var(--dsw-alias-label-tertiary);padding:24px 8px;font-size:12px}._7D6uKa_card{text-align:left;background:var(--dsw-alias-bg-base);border:1px solid var(--dsw-alias-border-l2);cursor:pointer;color:var(--dsw-alias-label-primary);border-radius:10px;flex-direction:column;gap:6px;padding:10px 12px;font-family:inherit;transition:box-shadow .12s,border-color .12s,transform .12s;display:flex}._7D6uKa_card:hover{box-shadow:var(--dsw-shadow-lv2);border-color:var(--dsw-alias-border-l3);transform:translateY(-1px)}._7D6uKa_card[data-status=running]{border-color:var(--dsw-alias-state-warn-primary)}._7D6uKa_cardTitle{-webkit-line-clamp:2;-webkit-box-orient:vertical;font-size:13px;font-weight:600;line-height:1.35;display:-webkit-box;overflow:hidden}._7D6uKa_cardExcerpt{color:var(--dsw-alias-label-secondary);-webkit-line-clamp:2;-webkit-box-orient:vertical;font-size:12px;line-height:1.4;display:-webkit-box;overflow:hidden}._7D6uKa_cardMeta{color:var(--dsw-alias-label-tertiary);align-items:center;gap:8px;font-size:11px;display:flex}._7D6uKa_cardTime{text-overflow:ellipsis;white-space:nowrap;flex:1;overflow:hidden}._7D6uKa_cardSchedule{white-space:nowrap;min-width:0;color:var(--dsw-alias-label-secondary);background:var(--dsw-alias-interactive-bg-hover);border-radius:999px;flex:none;padding:2px 6px;font-size:12px;line-height:1}._7D6uKa_cardRun{flex:none}._7D6uKa_cardRun[data-result=failed]{color:var(--dsw-alias-state-error-primary)}._7D6uKa_cardRun[data-result=succeeded]{color:var(--dsw-alias-state-success-primary)}._7D6uKa_cardSession{color:var(--dsw-alias-state-business-primary);flex:none}._7D6uKa_cardRunningLabel{color:var(--dsw-alias-state-warn-primary);font-size:11px}._7D6uKa_cardSpinner{border:2px solid var(--dsw-alias-state-warn-primary);border-top-color:#0000;border-radius:50%;flex:none;width:10px;height:10px;animation:.8s linear infinite _7D6uKa_dshTbSpin}@keyframes _7D6uKa_dshTbSpin{to{transform:rotate(360deg)}}._7D6uKa_primaryButton{color:var(--dsw-alias-label-primary-foreground);background:var(--dsw-alias-button-info-fill);cursor:pointer;white-space:nowrap;border:none;border-radius:8px;padding:6px 14px;font-size:13px;font-weight:600}._7D6uKa_primaryButton:hover:not(:disabled){background:var(--dsw-alias-button-info-hover)}._7D6uKa_primaryButton:disabled{opacity:.5;cursor:default}._7D6uKa_ghostButton{color:var(--dsw-alias-label-primary);border:1px solid var(--dsw-alias-border-l2);cursor:pointer;white-space:nowrap;background:0 0;border-radius:8px;padding:5px 12px;font-size:12px}._7D6uKa_ghostButton:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}._7D6uKa_ghostButton:disabled{opacity:.45;cursor:default}._7D6uKa_dangerButton{color:#fff;background:var(--dsw-alias-state-error-primary);cursor:pointer;white-space:nowrap;border:none;border-radius:8px;padding:6px 14px;font-size:13px;font-weight:600}._7D6uKa_dangerButton:hover:not(:disabled){filter:brightness(1.08)}._7D6uKa_dangerButton:active:not(:disabled){filter:brightness(.94)}._7D6uKa_dangerButton:disabled{opacity:.5;cursor:default}._7D6uKa_iconButton{width:26px;height:26px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:6px;justify-content:center;align-items:center;padding:0;font-size:13px;display:inline-flex}._7D6uKa_iconButton:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}._7D6uKa_linkButton{color:var(--dsw-alias-state-business-primary);cursor:pointer;white-space:nowrap;background:0 0;border:none;padding:0;font-size:12px}._7D6uKa_linkButton:hover{text-decoration:underline}._7D6uKa_modalBackdrop{z-index:1300;background:var(--dsw-alias-bg-mask-1);justify-content:center;align-items:center;display:flex;position:fixed;inset:0}._7D6uKa_modal{background:var(--dsw-alias-bg-base);border:1px solid var(--dsw-alias-border-l2);width:min(520px,100vw - 48px);max-height:calc(100vh - 96px);box-shadow:var(--dsw-shadow-lv3);color:var(--dsw-alias-label-primary);border-radius:14px;flex-direction:column;gap:12px;padding:18px;display:flex;overflow-y:auto}._7D6uKa_modalTitle{margin:0;font-size:15px;font-weight:700}._7D6uKa_confirmMessage{color:var(--dsw-alias-label-secondary);white-space:pre-wrap;overflow-wrap:anywhere;margin:0;font-size:13px;line-height:1.5}._7D6uKa_modalFooter{justify-content:flex-end;gap:10px;margin-top:4px;display:flex}._7D6uKa_field{flex-direction:column;gap:5px;display:flex}._7D6uKa_fieldLabel{color:var(--dsw-alias-label-secondary);font-size:12px;font-weight:600}._7D6uKa_input{color:var(--dsw-alias-label-primary);background:var(--dsw-specific-input-major);border:1px solid var(--dsw-alias-border-l2);resize:vertical;border-radius:8px;outline:none;padding:7px 10px;font-family:inherit;font-size:13px}._7D6uKa_input:focus{border-color:var(--dsw-alias-state-business-primary)}._7D6uKa_select{color:var(--dsw-alias-label-primary);background:var(--dsw-specific-input-major);border:1px solid var(--dsw-alias-border-l2);border-radius:8px;outline:none;max-width:100%;padding:7px 10px;font-family:inherit;font-size:13px}._7D6uKa_input::placeholder{color:var(--dsw-alias-label-tertiary)}._7D6uKa_formError{color:var(--dsw-alias-state-error-primary);margin:0;font-size:12px}._7D6uKa_detail{background:var(--dsw-alias-bg-base);border:1px solid var(--dsw-alias-border-l2);width:min(640px,100vw - 48px);max-height:calc(100vh - 80px);box-shadow:var(--dsw-shadow-lv3);color:var(--dsw-alias-label-primary);border-radius:14px;flex-direction:column;display:flex;overflow:hidden}._7D6uKa_detailHeader{border-bottom:1px solid var(--dsw-alias-separator-primary);flex:none;align-items:center;gap:10px;padding:14px 18px;display:flex}._7D6uKa_detailTitle{overflow-wrap:anywhere;flex:1;margin:0;font-size:15px;font-weight:700}._7D6uKa_statusBadge{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);border-radius:999px;flex:none;padding:2px 10px;font-size:12px}._7D6uKa_statusBadge[data-status=running]{color:var(--dsw-alias-state-warn-primary);border-color:var(--dsw-alias-state-warn-primary)}._7D6uKa_statusBadge[data-status=done]{color:var(--dsw-alias-state-success-primary);border-color:var(--dsw-alias-state-success-primary)}._7D6uKa_statusBadge[data-status=failed]{color:var(--dsw-alias-state-error-primary);border-color:var(--dsw-alias-state-error-primary)}._7D6uKa_detailBody{flex-direction:column;flex:1;gap:16px;padding:14px 18px;display:flex;overflow-y:auto}._7D6uKa_detailSection{flex-direction:column;gap:6px;display:flex}._7D6uKa_detailSection h4{color:var(--dsw-alias-label-tertiary);text-transform:none;margin:0;font-size:12px;font-weight:700}._7D6uKa_detailText{color:var(--dsw-alias-label-primary);white-space:pre-wrap;overflow-wrap:anywhere;margin:0;font-size:13px;line-height:1.55}._7D6uKa_scheduleToggle{color:var(--dsw-alias-label-primary);cursor:pointer;user-select:none;align-items:center;gap:8px;font-size:13px;display:flex}._7D6uKa_scheduleToggle input{accent-color:var(--dsw-alias-state-business-primary)}._7D6uKa_scheduleRow{align-items:center;gap:8px;display:flex}._7D6uKa_scheduleInput{min-width:0;font-family:var(--dsw-font-markdown-code-block-small);flex:1;font-size:12.5px}._7D6uKa_scheduleInputInvalid,._7D6uKa_scheduleInputInvalid:focus{border-color:var(--dsw-alias-state-error-primary)}._7D6uKa_schedulePreset{color:var(--dsw-alias-label-primary);background:var(--dsw-specific-input-major);border:1px solid var(--dsw-alias-border-l2);border-radius:8px;outline:none;flex:none;padding:7px 8px;font-size:12.5px}._7D6uKa_scheduleMeta{color:var(--dsw-alias-label-secondary);overflow-wrap:anywhere;margin:0;font-size:12px}._7D6uKa_promptBlock{font-size:12.5px;line-height:1.5;font-family:var(--dsw-font-markdown-code-block-small);color:var(--dsw-alias-label-primary);background:var(--dsw-alias-markdown-code-block);border:1px solid var(--dsw-alias-border-l1);white-space:pre-wrap;overflow-wrap:anywhere;border-radius:8px;max-height:240px;margin:0;padding:10px 12px;overflow-y:auto}._7D6uKa_executionList{flex-direction:column;gap:8px;margin:0;padding:0;list-style:none;display:flex}._7D6uKa_executionRow{border:1px solid var(--dsw-alias-border-l1);border-radius:8px;flex-wrap:wrap;align-items:center;gap:10px;padding:8px 10px;display:flex}._7D6uKa_executionBadge{color:var(--dsw-alias-state-warn-primary);background:var(--dsw-alias-state-warn-secondary);border-radius:999px;flex:none;padding:1px 8px;font-size:11px;font-weight:600}._7D6uKa_executionBadge[data-result=succeeded]{color:var(--dsw-alias-state-success-primary);background:0 0}._7D6uKa_executionBadge[data-result=failed]{color:var(--dsw-alias-state-error-primary);background:0 0}._7D6uKa_executionBadge[data-result=cancelled]{color:var(--dsw-alias-label-tertiary);background:0 0}._7D6uKa_executionTimes{color:var(--dsw-alias-label-secondary);font-size:12px}._7D6uKa_executionError{width:100%;color:var(--dsw-alias-state-error-primary);overflow-wrap:anywhere;font-size:12px}._7D6uKa_moveRow{flex-wrap:wrap;gap:8px;display:flex}._7D6uKa_detailFooter{border-top:1px solid var(--dsw-alias-separator-primary);flex:none;align-items:center;gap:10px;padding:12px 18px;display:flex}._7D6uKa_detailMeta{color:var(--dsw-alias-label-tertiary);margin-left:auto;font-size:11px}@container _7D6uKa_task-board-view (width<=768px){._7D6uKa_board{gap:10px;padding:10px}._7D6uKa_boardHeader{flex-wrap:wrap;align-items:center;gap:8px}._7D6uKa_backButton{flex:none;order:1}._7D6uKa_boardTitle{flex:auto;order:2}._7D6uKa_boardHeader>._7D6uKa_detailMeta{flex:1 0 100%;order:3;margin-left:0}._7D6uKa_search{flex:1 0 100%;order:4;min-width:0}._7D6uKa_boardHeader>button:not(._7D6uKa_backButton){flex:1 1 0;order:5;min-width:0}._7D6uKa_columns{scroll-snap-type:inline mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch;grid-auto-columns:86cqw;gap:10px;padding-inline:2px 14cqw;scroll-padding-inline:2px}._7D6uKa_columns::-webkit-scrollbar{display:none}._7D6uKa_column{scroll-snap-align:start;scroll-snap-stop:always}}@container _7D6uKa_task-board-view (width<=720px){._7D6uKa_boardHeader>._7D6uKa_detailMeta{text-overflow:ellipsis;white-space:nowrap;overflow:hidden}}@container _7D6uKa_task-board-view (width<=600px){._7D6uKa_board{padding-inline:8px}}@media (width<=768px){[data-dsh-taskboard-view]{height:100dvh}._7D6uKa_card,._7D6uKa_primaryButton,._7D6uKa_ghostButton,._7D6uKa_dangerButton,._7D6uKa_iconButton,._7D6uKa_linkButton,._7D6uKa_search,._7D6uKa_input,._7D6uKa_select,._7D6uKa_schedulePreset,._7D6uKa_scheduleToggle{min-height:44px}._7D6uKa_search,._7D6uKa_input,._7D6uKa_select,._7D6uKa_schedulePreset{box-sizing:border-box;font-size:16px}._7D6uKa_modalBackdrop{justify-content:stretch;align-items:stretch;width:100vw;height:100dvh}._7D6uKa_modal,._7D6uKa_detail{box-sizing:border-box;border:0;border-radius:0;width:100vw;height:100dvh;max-height:none}._7D6uKa_modal{padding-top:max(16px, env(safe-area-inset-top));padding-right:max(16px, env(safe-area-inset-right));padding-bottom:max(16px, env(safe-area-inset-bottom));padding-left:max(16px, env(safe-area-inset-left))}._7D6uKa_modalFooter{z-index:1;background:var(--dsw-alias-bg-base);flex-wrap:wrap;padding-top:8px;position:sticky;bottom:0}._7D6uKa_modalFooter>button{flex:120px}._7D6uKa_detailHeader{padding-top:max(12px, env(safe-area-inset-top));padding-right:max(14px, env(safe-area-inset-right));padding-left:max(14px, env(safe-area-inset-left));flex-wrap:wrap}._7D6uKa_detailTitle{min-width:0}._7D6uKa_detailBody{overscroll-behavior-y:contain;padding-right:max(14px, env(safe-area-inset-right));padding-left:max(14px, env(safe-area-inset-left))}._7D6uKa_detailFooter{padding-right:max(14px, env(safe-area-inset-right));padding-bottom:max(12px, env(safe-area-inset-bottom));padding-left:max(14px, env(safe-area-inset-left));flex-wrap:wrap}._7D6uKa_detailFooter>button{flex:96px}._7D6uKa_detailFooter>._7D6uKa_detailMeta{text-align:end;flex:1 0 100%;margin-left:0}._7D6uKa_scheduleRow{flex-direction:column;align-items:stretch}._7D6uKa_schedulePreset{width:100%}}._7D6uKa_card:focus-visible,._7D6uKa_primaryButton:focus-visible,._7D6uKa_ghostButton:focus-visible,._7D6uKa_dangerButton:focus-visible,._7D6uKa_iconButton:focus-visible,._7D6uKa_linkButton:focus-visible,._7D6uKa_search:focus-visible,._7D6uKa_input:focus-visible,._7D6uKa_select:focus-visible,._7D6uKa_schedulePreset:focus-visible,._7D6uKa_scheduleToggle input:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary);outline-offset:2px}._7D6uKa_primaryButton,._7D6uKa_ghostButton,._7D6uKa_dangerButton,._7D6uKa_iconButton,._7D6uKa_linkButton,._7D6uKa_search,._7D6uKa_input,._7D6uKa_select,._7D6uKa_schedulePreset,._7D6uKa_scheduleToggle input{transition:background-color .12s,color .12s,border-color .12s,outline-color .12s,box-shadow .12s,transform .12s}._7D6uKa_card:active{box-shadow:var(--dsw-shadow-lv1);transform:translateY(0)}._7D6uKa_primaryButton:active:not(:disabled),._7D6uKa_ghostButton:active:not(:disabled),._7D6uKa_dangerButton:active:not(:disabled),._7D6uKa_iconButton:active:not(:disabled),._7D6uKa_linkButton:active:not(:disabled){transform:translateY(1px)}._7D6uKa_iconButton:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}._7D6uKa_linkButton:hover:not(:disabled){text-decoration:underline}._7D6uKa_iconButton:disabled,._7D6uKa_linkButton:disabled{opacity:.45;cursor:default}._7D6uKa_search:focus,._7D6uKa_select:focus,._7D6uKa_schedulePreset:focus{border-color:var(--dsw-alias-state-business-primary)}._7D6uKa_scheduleToggle input{margin:0}@media (prefers-reduced-motion:reduce){._7D6uKa_card,._7D6uKa_primaryButton,._7D6uKa_ghostButton,._7D6uKa_dangerButton,._7D6uKa_iconButton,._7D6uKa_linkButton,._7D6uKa_search,._7D6uKa_input,._7D6uKa_select,._7D6uKa_schedulePreset,._7D6uKa_scheduleToggle input{transition:none}._7D6uKa_cardSpinner{animation:none}}._7D6uKa_cardTags{flex-wrap:wrap;gap:4px;display:flex}._7D6uKa_cardTag{border:1px solid var(--dsh-task-tag-border);background:var(--dsh-task-tag-fill);max-width:100%;color:var(--dsw-alias-label-primary);text-overflow:ellipsis;white-space:nowrap;border-radius:999px;padding:0 7px;font-size:10px;line-height:16px;overflow:hidden}._7D6uKa_tagFilter{flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 10px;display:flex}._7D6uKa_tagFilterLabel{color:var(--dsw-alias-label-tertiary);font-size:11px}._7D6uKa_tagChip{border:1px solid var(--dsh-task-tag-border);color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border-radius:999px;padding:1px 9px;font-family:inherit;font-size:11px;line-height:18px}._7D6uKa_tagChip[data-active=true]{background:var(--dsh-task-tag-fill);color:var(--dsw-alias-label-primary)}._7D6uKa_cardTag[data-tag-tone=\"0\"],._7D6uKa_tagChip[data-tag-tone=\"0\"]{--dsh-task-tag-fill:#4e93e82e;--dsh-task-tag-border:#4e93e866}._7D6uKa_cardTag[data-tag-tone=\"1\"],._7D6uKa_tagChip[data-tag-tone=\"1\"]{--dsh-task-tag-fill:#2ea36a2e;--dsh-task-tag-border:#2ea36a66}._7D6uKa_cardTag[data-tag-tone=\"2\"],._7D6uKa_tagChip[data-tag-tone=\"2\"]{--dsh-task-tag-fill:#d08a2a2e;--dsh-task-tag-border:#d08a2a66}._7D6uKa_cardTag[data-tag-tone=\"3\"],._7D6uKa_tagChip[data-tag-tone=\"3\"]{--dsh-task-tag-fill:#b456c82e;--dsh-task-tag-border:#b456c866}._7D6uKa_cardTag[data-tag-tone=\"4\"],._7D6uKa_tagChip[data-tag-tone=\"4\"]{--dsh-task-tag-fill:#cf5f7a2e;--dsh-task-tag-border:#cf5f7a66}._7D6uKa_cardTag[data-tag-tone=\"5\"],._7D6uKa_tagChip[data-tag-tone=\"5\"]{--dsh-task-tag-fill:#4a9fb52e;--dsh-task-tag-border:#4a9fb566}._7D6uKa_fieldHint{color:var(--dsw-alias-label-tertiary);font-size:11px;line-height:1.4}._7D6uKa_tagRow{align-items:center;gap:6px;display:flex}._7D6uKa_tagRow ._7D6uKa_input{flex:1 1 0;min-width:0}._7D6uKa_tagRow ._7D6uKa_ghostButton{flex:none}._7D6uKa_tagAddButton{align-self:flex-start}._7D6uKa_projectFilter{flex:none;align-items:center;gap:6px;display:flex}._7D6uKa_projectFilterLabel{color:var(--dsw-alias-label-secondary);white-space:nowrap;font-size:12px}._7D6uKa_projectDialog{background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2);border-radius:10px;flex-direction:column;flex:none;gap:8px;margin-bottom:8px;padding:10px 12px;display:flex}._7D6uKa_projectDialogActions{justify-content:flex-end;gap:8px;display:flex}._7D6uKa_aiParse{background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2);border-radius:10px;flex-direction:column;gap:6px;padding:10px 12px;display:flex}._7D6uKa_aiParseRow{align-items:center;gap:8px;display:flex}._7D6uKa_aiParseRow ._7D6uKa_select{flex:1 1 0;min-width:0}._7D6uKa_aiParseRow ._7D6uKa_ghostButton,._7D6uKa_aiParseRow ._7D6uKa_primaryButton{flex:none}._7D6uKa_cardSubtask{border:1px solid var(--dsw-alias-border-l2);max-width:100%;color:var(--dsw-alias-label-secondary);text-overflow:ellipsis;white-space:nowrap;background:0 0;border-radius:999px;padding:0 7px;font-size:10px;line-height:16px;overflow:hidden}._7D6uKa_cardSubtask[data-tone=failed]{color:var(--dsw-alias-state-error-primary);border-color:var(--dsw-alias-state-error-primary)}._7D6uKa_cardSubtask[data-tone=running]{color:var(--dsw-alias-state-warn-primary);border-color:var(--dsw-alias-state-warn-primary)}._7D6uKa_cardSubtask[data-tone=done]{color:var(--dsw-alias-state-success-primary);border-color:var(--dsw-alias-state-success-primary)}._7D6uKa_subtaskList{flex-direction:column;gap:6px;margin:0;padding:0;list-style:none;display:flex}._7D6uKa_subtaskRow{border:1px solid var(--dsw-alias-border-l1);border-radius:8px;flex-wrap:wrap;align-items:center;gap:10px;padding:6px 10px;display:flex}._7D6uKa_subtaskRow ._7D6uKa_linkButton:first-child{text-align:left;overflow-wrap:anywhere;flex:auto;min-width:0}._7D6uKa_subtaskAddRow{flex-wrap:wrap;gap:8px;display:flex}._7D6uKa_pickList{flex-direction:column;gap:6px;max-height:320px;margin:0;padding:0;list-style:none;display:flex;overflow-y:auto}._7D6uKa_pickRow{border:1px solid var(--dsw-alias-border-l1);border-radius:8px;align-items:center;gap:10px;padding:6px 10px;display:flex}._7D6uKa_pickTitle{min-width:0;color:var(--dsw-alias-label-primary);overflow-wrap:anywhere;flex:auto;font-size:13px}";
 		const tagId$12 = "@linxin666/dsh-web-all/packages/dsh-task-board/src/client/board.module.css";
 		if (typeof document !== "undefined" && document.querySelector("style[data-plugin-css=" + JSON.stringify(tagId$12) + "]") === null) {
 			const tag = document.createElement("style");
@@ -7061,9 +6356,6 @@ window.__ModuleLoader__.load({
 			"detailText": "_7D6uKa_detailText",
 			"detailTitle": "_7D6uKa_detailTitle",
 			"dshTbSpin": "_7D6uKa_dshTbSpin",
-			"entry": "_7D6uKa_entry",
-			"entryIcon": "_7D6uKa_entryIcon",
-			"entryLabel": "_7D6uKa_entryLabel",
 			"executionBadge": "_7D6uKa_executionBadge",
 			"executionError": "_7D6uKa_executionError",
 			"executionList": "_7D6uKa_executionList",
@@ -9469,388 +8761,129 @@ window.__ModuleLoader__.load({
 			});
 		}
 		//#endregion
-		//#region ../dsh-task-board/src/client/body-mutations.ts
-		/** Cross-bundle registry key; `Symbol.for` so every module copy agrees. */
-		const HUB_KEY$4 = Symbol.for("dsh-web.body-mutation-hub");
-		const INVALIDATION_ONLY$4 = Symbol.for("dsh-web.body-mutation-invalidation");
-		function needsRecords$4(subscribers) {
-			for (const listener of subscribers) if (!listener[INVALIDATION_ONLY$4]) return true;
-			return false;
-		}
+		//#region ../dsh-task-board/src/client/native-panel.tsx
+		/** Row order among the shell's global panel rows (Plugins is 0, Schedule 10). */
+		const PANEL_ORDER = 20;
 		/**
-		* Subscribe to a coalesced DOM re-check without retaining mutation records.
-		* The marked wrapper also works with an older hub, which delivers records
-		* that it simply ignores until a page reload picks up the updated hub.
+		* The sidebar row glyph the shell asks for at its own size and active state.
+		* The shell owns the button, label, tooltip and rail geometry; this component
+		* draws only the glyph, like every other panel row.
+		* @param props - the shell's icon share: square edge and selection state.
+		* @returns the decorative board glyph.
 		*/
-		function subscribeBodyInvalidations$4(subscriber) {
-			const listener = () => {
-				subscriber();
-			};
-			listener[INVALIDATION_ONLY$4] = true;
-			return subscribeBodyMutations$4(listener);
-		}
-		/**
-		* Subscribe to body-level childList mutations.
-		* @param subscriber - called at most once per animation frame with the records
-		*   collected since the previous flush; must be safe to run repeatedly.
-		* @returns the disposer removing this subscriber (and the observer when it was
-		*   the last one).
-		*/
-		function subscribeBodyMutations$4(subscriber) {
-			if (typeof globalThis === "undefined" || typeof document === "undefined") return () => {};
-			if (typeof MutationObserver !== "function") return () => {};
-			const registry = globalThis;
-			let hub = registry[HUB_KEY$4];
-			if (hub === void 0) {
-				const subscribers = /* @__PURE__ */ new Set();
-				const created = {
-					observer: void 0,
-					subscribers,
-					pending: [],
-					scheduled: false
-				};
-				const flush = () => {
-					created.frame = void 0;
-					created.scheduled = false;
-					const batch = created.pending;
-					created.pending = [];
-					for (const listener of [...subscribers]) {
-						if (!subscribers.has(listener)) continue;
-						try {
-							listener(batch);
-						} catch {}
-					}
-				};
-				const schedule = () => {
-					if (created.scheduled) return;
-					created.scheduled = true;
-					if (typeof requestAnimationFrame === "function") created.frame = requestAnimationFrame(flush);
-					else flush();
-				};
-				created.observer = new MutationObserver((records) => {
-					if (needsRecords$4(subscribers)) for (const record of records) created.pending.push(record);
-					schedule();
-				});
-				created.observer.observe(document.body ?? document.documentElement, {
-					childList: true,
-					subtree: true
-				});
-				registry[HUB_KEY$4] = created;
-				hub = created;
-			}
-			const active = hub;
-			active.subscribers.add(subscriber);
-			let subscribed = true;
-			return () => {
-				if (!subscribed) return;
-				subscribed = false;
-				active.subscribers.delete(subscriber);
-				if (!needsRecords$4(active.subscribers)) active.pending = [];
-				if (active.subscribers.size === 0 && registry[HUB_KEY$4] === active) {
-					active.observer.disconnect();
-					if (active.frame !== void 0 && typeof cancelAnimationFrame === "function") cancelAnimationFrame(active.frame);
-					active.frame = void 0;
-					active.pending = [];
-					active.scheduled = false;
-					delete registry[HUB_KEY$4];
-				}
-			};
-		}
-		//#endregion
-		//#region ../dsh-task-board/src/client/panel-mount-core.ts
-		/**
-		* Center-column panel takeover lifecycle.
-		*
-		* The `conversation` slot is single-occupant (ui-conversation) and external
-		* plugins cannot declare slots, so a family panel takes over the center
-		* column at the DOM level: a container is appended inside the center column
-		* (`[class*="centerCol"]`, the 0.1.0-rc.6+ AppFrame layout; previously
-		* `[data-pane="conversation"]` on older shells — the mount selector keeps
-		* both, ssh #243 / task-board #107) as an extra trailing child React never
-		* manages, and a stylesheet rule hides the conversation content while the
-		* panel is active. Toggling is a data attribute on <html> — no React
-		* involvement, so the conversation subtree underneath stays mounted and
-		* stateful.
-		*
-		* Consuming plugins keep a thin wrapper that supplies the panel tree,
-		* container attribute names, and stylesheet class; those names are pinned by
-		* each package's CSS, skins, and the semantic-attributes contract. The
-		* sidebar row toggling the panel shares its core the same way
-		* (shared/client/sidebar-entry-core.ts, synced copy).
-		*/
-		const CONVERSATION_COLUMN_SELECTOR$1 = "[data-pane=\"conversation\"], [class*=\"centerCol\"]";
-		/** Cross-plugin activation event; detail is the activating panel name. */
-		const ACTIVATE_EVENT$1 = "dsh-panel-activate";
-		const SIDEBAR_ROW_SELECTOR$1 = "[class*=\"sessionRow\"], [class*=\"projectRow\"], [class*=\"searchResultRow\"], [class*=\"searchResultWorkspace\"], [class*=\"newSession\"]";
-		/** Find the center column, or undefined while the frame is not mounted. */
-		function conversationColumn$1() {
-			return document.querySelector(CONVERSATION_COLUMN_SELECTOR$1) ?? void 0;
-		}
-		/**
-		* Mount a family panel into the center column and bind its visibility to the
-		* owning controller's open state.
-		* @returns disposer unmounting the tree and restoring the column.
-		*/
-		function mountCenterPanel$1(options) {
-			let root;
-			let container;
-			let unsubscribeLocale;
-			try {
-				unsubscribeLocale = options.locale?.subscribe(() => {
-					if (root !== void 0) options.render(root);
-				});
-			} catch {}
-			const ensure = () => {
-				if (container !== void 0 && !container.isConnected) {
-					root?.unmount();
-					root = void 0;
-					container.remove();
-					container = void 0;
-				}
-				if (container === void 0) {
-					const column = conversationColumn$1();
-					if (column === void 0) return;
-					container = document.createElement("div");
-					container.dataset[options.viewDatasetKey] = "";
-					container.dataset.dshPlugin = options.pluginName;
-					container.className = options.viewClassName;
-					column.appendChild(container);
-				}
-				if (root !== void 0 || !options.isOpen()) return;
-				root = (0, react_dom_client.createRoot)(container);
-				options.render(root);
-			};
-			const unsubscribeBody = subscribeBodyInvalidations$4(() => {
-				ensure();
+		function TaskBoardPanelIcon({ size }) {
+			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
+				viewBox: "0 0 16 16",
+				width: size,
+				height: size,
+				fill: "none",
+				stroke: "currentColor",
+				strokeWidth: "1.3",
+				strokeLinecap: "round",
+				strokeLinejoin: "round",
+				"aria-hidden": "true",
+				children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("rect", {
+					x: "2",
+					y: "2.5",
+					width: "12",
+					height: "11",
+					rx: "1.5"
+				}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M2 6.5h12M6.5 6.5v7" })]
 			});
-			const applyActive = () => {
-				if (options.isOpen()) {
-					ensure();
-					document.documentElement.removeAttribute(options.siblingActiveAttribute);
-					document.documentElement.setAttribute(options.activeAttribute, "");
-					document.dispatchEvent(new CustomEvent(ACTIVATE_EVENT$1, { detail: options.panelName }));
-				} else document.documentElement.removeAttribute(options.activeAttribute);
+		}
+		/**
+		* The main-slot page. The layout mounts it only while the board is the selected
+		* panel, so the conversation keeps the center column untouched the rest of the
+		* time; the wrapper carries the pinned `data-dsh-taskboard-view` semantic
+		* anchor (L2 contract, skins) and the container query context the board's
+		* responsive rules read.
+		* @param props - the framework main-slot share plus this entry's injected face.
+		* @returns the board page.
+		*/
+		function TaskBoardPanel({ controller }) {
+			return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+				className: board_module_css_default.panel,
+				"data-dsh-taskboard-view": "",
+				"data-dsh-plugin": "task-board",
+				children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(TaskBoard, { controller })
+			});
+		}
+		/**
+		* The family's single-occupant center-column protocol.
+		*
+		* dsh-ssh still takes the column over at the DOM level: while its
+		* `html[data-dsh-ssh-active]` attribute is set, its stylesheet hides every
+		* other child of the center column, including this board's page. The two
+		* plugins therefore have to hand the column to each other explicitly. The
+		* event and the detail values are the shared contract owned by
+		* `shared/client/panel-mount-core.ts` (ssh's synced copy dispatches and
+		* listens for exactly these), so the board participates in it rather than
+		* inventing a second mechanism.
+		*/
+		const PANEL_ACTIVATE_EVENT = "dsh-panel-activate";
+		/** This panel's name in the family protocol (ssh's `siblingPanelName`). */
+		const PANEL_NAME = "taskboard";
+		/** The sibling panel whose activation hands the column back (ssh's `panelName`). */
+		const SIBLING_PANEL_NAME = "ssh";
+		/**
+		* Keep the board and the ssh panel mutually exclusive.
+		*
+		* The board contributes the column through the layout, so selecting it makes
+		* the shell render its page; the ssh panel needs to be told to let go, or its
+		* takeover stylesheet keeps covering the page. The reverse direction is the
+		* same: ssh taking the column asks the board to hand it back to the
+		* conversation, which is what the layout renders underneath ssh.
+		* @param controller - the board controller whose open state drives the protocol.
+		* @returns disposer removing the listener and the subscription.
+		*/
+		function coordinateWithSshPanel(controller) {
+			let open = controller.getSnapshot().boardOpen;
+			const onActivate = (event) => {
+				if (event.detail !== SIBLING_PANEL_NAME) return;
+				if (controller.getSnapshot().boardOpen) controller.closeBoard();
 			};
-			const onOtherActivate = (event) => {
-				if (event.detail === options.siblingPanelName && options.isOpen()) options.close();
-			};
-			const onClickSidebarRow = (event) => {
-				if (!options.isOpen()) return;
-				const target = event.target;
-				if (target === null) return;
-				if (target.closest(SIDEBAR_ROW_SELECTOR$1) !== null) options.close();
-			};
-			document.addEventListener("click", onClickSidebarRow, true);
-			document.addEventListener(ACTIVATE_EVENT$1, onOtherActivate);
-			const unsubscribe = options.subscribe(applyActive);
-			applyActive();
-			ensure();
+			const unsubscribe = controller.subscribe(() => {
+				const next = controller.getSnapshot().boardOpen;
+				if (next === open) return;
+				open = next;
+				if (next) document.dispatchEvent(new CustomEvent(PANEL_ACTIVATE_EVENT, { detail: PANEL_NAME }));
+			});
+			document.addEventListener(PANEL_ACTIVATE_EVENT, onActivate);
 			return () => {
-				document.removeEventListener("click", onClickSidebarRow, true);
-				document.removeEventListener(ACTIVATE_EVENT$1, onOtherActivate);
-				unsubscribeBody();
+				document.removeEventListener(PANEL_ACTIVATE_EVENT, onActivate);
 				unsubscribe();
-				unsubscribeLocale?.();
-				document.documentElement.removeAttribute(options.activeAttribute);
-				root?.unmount();
-				root = void 0;
-				container?.remove();
-				container = void 0;
 			};
-		}
-		//#endregion
-		//#region ../dsh-task-board/src/client/board-mount.tsx
-		/**
-		* Mount the board React tree into the center column and bind its visibility
-		* to the controller's boardOpen state.
-		* @param controller - the board controller driving the view.
-		* @param locale - locale-change source; when given, re-renders a mounted board
-		*   on a Language switch.
-		* @returns disposer unmounting the tree and restoring the column.
-		*/
-		function mountBoard(controller, locale) {
-			return mountCenterPanel$1({
-				render: (root) => root.render(/* @__PURE__ */ (0, react_jsx_runtime.jsx)(TaskBoard, { controller })),
-				viewDatasetKey: "dshTaskboardView",
-				pluginName: "task-board",
-				viewClassName: board_module_css_default.boardView,
-				activeAttribute: "data-dsh-taskboard-active",
-				siblingActiveAttribute: "data-dsh-ssh-active",
-				panelName: "taskboard",
-				siblingPanelName: "ssh",
-				isOpen: () => controller.getSnapshot().boardOpen,
-				close: () => controller.closeBoard(),
-				subscribe: (listener) => controller.subscribe(listener),
-				locale
-			});
-		}
-		//#endregion
-		//#region ../dsh-task-board/src/client/sidebar-entry-core.ts
-		/**
-		* Shared sidebar entry injection core.
-		*
-		* dsh's sidebar shell exposes no slot an external plugin can register into,
-		* so the entry row is injected between the shell's New Session button and the
-		* workspace browser. The injection self-heals: a MutationObserver watches the
-		* sidebar root and re-inserts the row whenever a React re-render displaces it
-		* (re-insertion happens in the same frame, before paint, so no flicker).
-		*
-		* The row is plain DOM (no React tree) so it can never disturb the shell's
-		* reconciliation; the view it toggles is a separate root owned by the caller.
-		*
-		* Packages receive this file as a generated copy via scripts/sync-shared.mjs;
-		* edit the shared source and re-run the sync instead of editing a copy.
-		*/
-		/** Find the sidebar shell root element, or undefined while not yet mounted. */
-		function sidebarRoot$2() {
-			const column = document.querySelector("[data-pane=\"sidebar\"], [class*=\"sidebarCol\"]");
-			if (column === null) return void 0;
-			return column.querySelector("[class*=\"logoRow\"]")?.parentElement ?? column.firstElementChild;
-		}
-		/** The New Session button: nested in the logo row on current shells, a direct child on legacy shells. */
-		function newSessionButton$2(root) {
-			const nested = root.querySelector("button[class*=\"newSession\"]");
-			if (nested !== null) return nested;
-			for (const child of root.children) if (child.tagName === "BUTTON") return child;
-		}
-		/** Build the entry row (detached; inserted once the shell is up). */
-		function createEntry$2(options) {
-			const entry = document.createElement("button");
-			entry.type = "button";
-			entry.setAttribute(options.rowAttribute, "");
-			if (options.plugin !== void 0) {
-				entry.setAttribute("data-dsh-plugin", options.plugin);
-				entry.setAttribute("data-dsh-part", "sidebar-entry");
-			}
-			entry.className = options.css["entry"] ?? "";
-			const labelSpan = document.createElement("span");
-			labelSpan.className = options.css["entryLabel"] ?? "";
-			const iconSpan = document.createElement("span");
-			iconSpan.className = options.css["entryIcon"] ?? "";
-			iconSpan.innerHTML = options.icon;
-			entry.append(iconSpan, labelSpan);
-			const applyLabel = () => {
-				entry.setAttribute("aria-label", options.label());
-				if (options.tooltip !== void 0) entry.setAttribute("title", options.tooltip());
-				labelSpan.textContent = options.label();
-			};
-			applyLabel();
-			entry.addEventListener("click", options.onToggle);
-			return {
-				entry,
-				applyLabel
-			};
-		}
-		/** Re-insert the entry after the New Session row (before the browser region). */
-		function placeEntry$2(root, entry, options) {
-			const button = newSessionButton$2(root);
-			if (button === void 0) return false;
-			if (entry.parentElement !== root) {
-				const row = button.closest("[class*=\"logoRow\"]");
-				const base = row !== null && row.parentElement === root ? row : button;
-				const family = Array.from(root.children).filter((el) => el instanceof HTMLElement && el.matches(options.familySelectors.join(", ")));
-				const anchor = options.position === "before" ? family.length > 0 ? family[0] : base.nextElementSibling : family.length > 0 ? family[family.length - 1].nextElementSibling : base.nextElementSibling;
-				root.insertBefore(entry, anchor);
-			}
-			return true;
 		}
 		/**
-		* Mount the sidebar entry, waiting for the shell to render and self-healing
-		* on later React re-renders.
-		* @param options - the row's attribute/icon/copy/action/ordering configuration.
-		* @returns disposer removing the entry and its observers.
+		* Register the board's sidebar row and center-column page.
+		*
+		* Both seats are declared by shell plugins this package does not depend on at
+		* runtime, so each registration is wrapped in `ctx.slots.inject`: the callback
+		* runs only after the owning entry declares the seat, and a shell that never
+		* declares it leaves the board simply absent instead of failing boot.
+		* @param ctx - client root context (services: slots).
+		* @param controller - the board controller the page and the row drive.
+		* @returns disposer releasing both registrations.
 		*/
-		function mountSidebarEntry$5(options) {
-			if (typeof document !== "undefined" && document.querySelector(options.rowSelector) !== null) return () => {};
-			const { entry, applyLabel } = createEntry$2(options);
-			let root;
-			let placed = false;
-			let unsubscribeRefresh;
-			if (options.refresh !== void 0) try {
-				unsubscribeRefresh = options.refresh.subscribe(applyLabel);
-			} catch {}
-			const tryPlace = () => {
-				if (root !== void 0 && !root.isConnected) {
-					rootObserver.disconnect();
-					root = void 0;
-					placed = false;
-				}
-				if (placed) {
-					if (document.body.contains(entry)) return;
-					rootObserver.disconnect();
-					root = void 0;
-					placed = false;
-				}
-				root ??= sidebarRoot$2();
-				if (root === void 0) return;
-				placed = placeEntry$2(root, entry, options);
-				if (placed) rootObserver.observe(root, {
-					childList: true,
-					subtree: true
-				});
-			};
-			const unsubscribeBody = subscribeBodyInvalidations$4(() => {
-				tryPlace();
-			});
-			const rootObserver = new MutationObserver(() => {
-				if (root === void 0 || !root.isConnected) {
-					placed = false;
-					tryPlace();
-					return;
-				}
-				if (!root.contains(entry)) placed = placeEntry$2(root, entry, options);
-			});
-			const unsubscribeActive = options.active === void 0 ? void 0 : (() => {
-				const syncActive = () => {
-					if (options.active.isOpen()) entry.dataset.active = "true";
-					else delete entry.dataset.active;
-				};
-				const unsubscribe = options.active.subscribe(syncActive);
-				syncActive();
-				return unsubscribe;
-			})();
-			tryPlace();
+		function registerTaskBoardPanel(ctx, controller) {
+			const releaseCoordination = coordinateWithSshPanel(controller);
+			const slots = ctx.slots;
+			const disposers = [];
+			disposers.push(slots.inject("sidebar.panellist", () => slots.register({
+				name: "sidebar.panellist",
+				id: TASK_BOARD_PANEL_ID,
+				order: PANEL_ORDER,
+				label: () => t$4("entry.label")
+			}, TaskBoardPanelIcon)));
+			disposers.push(slots.inject("main", () => slots.register({
+				name: "main",
+				key: TASK_BOARD_PANEL_ID,
+				inject: () => ({ controller })
+			}, TaskBoardPanel)));
 			return () => {
-				unsubscribeBody();
-				rootObserver.disconnect();
-				unsubscribeRefresh?.();
-				unsubscribeActive?.();
-				entry.remove();
+				releaseCoordination();
+				for (const dispose of disposers.splice(0)) dispose();
 			};
-		}
-		//#endregion
-		//#region ../dsh-task-board/src/client/sidebar-entry.ts
-		/** Stable data attribute identifying the injected entry row. */
-		const ENTRY_SELECTOR$2 = "[data-dsh-taskboard-entry]";
-		/** Inline icon normalized to the shell's 16px navigation glyph size. */
-		const ICON$2 = "<svg viewBox=\"0 0 16 16\" width=\"16\" height=\"16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.3\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"2\" y=\"2.5\" width=\"12\" height=\"11\" rx=\"1.5\"/><path d=\"M2 6.5h12M6.5 6.5v7\"/></svg>";
-		/**
-		* Mount the sidebar entry, waiting for the shell to render and self-healing
-		* on later React re-renders.
-		* @param controller - the board controller the entry toggles.
-		* @param locale - locale-change source; when given, re-applies the label on
-		*   a Language switch (the plain-DOM row otherwise keeps the mount-time copy).
-		* @returns disposer removing the entry and its observers.
-		*/
-		function mountSidebarEntry$4(controller, locale) {
-			return mountSidebarEntry$5({
-				rowAttribute: "data-dsh-taskboard-entry",
-				rowSelector: ENTRY_SELECTOR$2,
-				plugin: "task-board",
-				icon: ICON$2,
-				css: board_module_css_default,
-				label: () => t$4("entry.label"),
-				refresh: locale === void 0 ? void 0 : { subscribe: (listener) => locale.subscribe(listener) },
-				onToggle: () => {
-					controller.toggleBoard();
-				},
-				position: "before",
-				familySelectors: ["[data-dsh-taskboard-entry]", "[data-dsh-ssh-entry]"],
-				active: {
-					subscribe: (listener) => controller.subscribe(listener),
-					isOpen: () => controller.getSnapshot().boardOpen
-				}
-			});
 		}
 		//#endregion
 		//#region \0dsh-css:packages/dsh-task-board/src/client/settings-card.module.css.mjs
@@ -11200,7 +10233,8 @@ window.__ModuleLoader__.load({
 			"locale",
 			"remote",
 			"remote.session",
-			"uiWorkspace"
+			"uiWorkspace",
+			"layout"
 		];
 		/**
 		* Mount the task board.
@@ -11245,6 +10279,9 @@ window.__ModuleLoader__.load({
 				const controller = new BoardController({
 					store: new LocalStorageTaskStore(),
 					transport: new HttpTaskBoardHostTransport(),
+					panel: { select: (panelId) => {
+						ctx.get("layout")?.selectPanel?.(panelId);
+					} },
 					sessions: {
 						current: () => mainViewSessionId$3(sessions.list.getSnapshot().byId),
 						open: (id) => ctx.uiWorkspace.openSession(id),
@@ -11325,10 +10362,18 @@ window.__ModuleLoader__.load({
 					pushModelOptions();
 				}));
 				try {
-					disposers.push(mountSidebarEntry$4(controller, ctx.locale));
-					disposers.push(mountBoard(controller, ctx.locale));
+					disposers.push(registerTaskBoardPanel(ctx, controller));
+					const layoutFace = ctx.get("layout");
+					if (layoutFace?.panelInfo !== void 0) {
+						const sync = () => {
+							const active = layoutFace.panelInfo.getSnapshot().activePanelId;
+							controller.syncPanelSelection(active === "task-board" ? TASK_BOARD_PANEL_ID : null);
+						};
+						sync();
+						disposers.push(layoutFace.panelInfo.subscribe(sync));
+					}
 				} catch (error) {
-					console.error("[dsh-task-board] mount failed:", error);
+					console.error("[dsh-task-board] panel registration failed:", error);
 				}
 				uiDisposer = () => {
 					for (const dispose of disposers.splice(0)) dispose();
@@ -35594,14 +34639,17 @@ window.__ModuleLoader__.load({
 		/**
 		* Center-column panel takeover lifecycle.
 		*
-		* The `conversation` slot is single-occupant (ui-conversation) and external
-		* plugins cannot declare slots, so a family panel takes over the center
-		* column at the DOM level: a container is appended inside the center column
-		* (`[class*="centerCol"]`, the 0.1.0-rc.6+ AppFrame layout; previously
-		* `[data-pane="conversation"]` on older shells — the mount selector keeps
-		* both, ssh #243 / task-board #107) as an extra trailing child React never
-		* manages, and a stylesheet rule hides the conversation content while the
-		* panel is active. Toggling is a data attribute on <html> — no React
+		* dsh-ssh takes over the center column at the DOM level: a container is
+		* appended inside the center column (`[class*="centerCol"]`, the 0.1.0-rc.6+
+		* AppFrame layout; previously `[data-pane="conversation"]` on older shells —
+		* the mount selector keeps both, ssh #243 / task-board #107) as an extra
+		* trailing child React never manages, and a stylesheet rule hides the
+		* conversation content while the panel is active. The task board used to share
+		* this: it now contributes a keyed `main` page and a `sidebar.panellist` row
+		* through the official slots system, so the shell owns its column. The shared
+		* `dsh-panel-activate` event below stays a contract because the board still
+		* participates in it to hand the column over to, and take it back from, this
+		* takeover. Toggling is a data attribute on <html> — no React
 		* involvement, so the conversation subtree underneath stays mounted and
 		* stateful.
 		*
@@ -36020,7 +35068,7 @@ window.__ModuleLoader__.load({
 					controller.toggle();
 				},
 				position: "after",
-				familySelectors: ["[data-dsh-taskboard-entry]", "[data-dsh-ssh-entry]"],
+				familySelectors: ["[data-dsh-ssh-entry]"],
 				active: {
 					subscribe: (listener) => controller.subscribe(listener),
 					isOpen: () => controller.getSnapshot().panelOpen
@@ -39494,11 +38542,7 @@ window.__ModuleLoader__.load({
 				refresh: locale === void 0 ? void 0 : { subscribe: (listener) => locale.subscribe(listener) },
 				onToggle: onClick,
 				position: "after",
-				familySelectors: [
-					"[data-dsh-taskboard-entry]",
-					"[data-dsh-ssh-entry]",
-					"[data-dsh-skill-explorer-entry]"
-				]
+				familySelectors: ["[data-dsh-ssh-entry]", "[data-dsh-skill-explorer-entry]"]
 			});
 		}
 		//#endregion

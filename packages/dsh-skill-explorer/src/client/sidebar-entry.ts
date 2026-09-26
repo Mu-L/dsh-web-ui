@@ -45,6 +45,6 @@ export function mountSidebarEntry(onClick: () => void, locale?: LocaleRefreshSou
     refresh: locale === undefined ? undefined : { subscribe: (listener) => locale.subscribe(listener) },
     onToggle: onClick,
     position: 'after',
-    familySelectors: ['[data-dsh-taskboard-entry]', '[data-dsh-ssh-entry]', '[data-dsh-skill-explorer-entry]'],
+    familySelectors: ['[data-dsh-ssh-entry]', '[data-dsh-skill-explorer-entry]'],
   })
 }

@@ -50,7 +50,7 @@ function snapshot(revision: number, tasks: TaskRecord[] = [], ledgerId = 'ledger
   }
 }
 
-function makeController() {
+function makeController(panel?: { select(panelId: string | null): void }) {
   const sessions = new FakeSessions()
   const store = new InMemoryTaskStore()
   const deps: ControllerDeps = {
@@ -58,6 +58,7 @@ function makeController() {
     sessions,
     now: () => NOW,
     uuid,
+    ...(panel === undefined ? {} : { panel }),
   }
   const controller = new BoardController(deps)
   controller.start()
@@ -214,6 +215,62 @@ describe('view state', () => {
     expect(controller.getSnapshot().boardOpen).toBe(false)
     controller.toggleBoard()
     expect(controller.getSnapshot().boardOpen).toBe(true)
+  })
+
+  it('operator sees the layout select the board panel on open and the conversation on close', () => {
+    // Given a controller wired to the layout panel-navigation face
+    const selections: Array<string | null> = []
+    const { controller } = makeController({ select: panelId => { selections.push(panelId) } })
+
+    // When the user opens and closes the board
+    controller.openBoard()
+    controller.closeBoard()
+    // Re-opening is not a second selection request for the already-open board
+    controller.openBoard()
+
+    // Then the layout was asked for the board panel, then the conversation,
+    // then the board again
+    expect(selections).toEqual(['task-board', null, 'task-board'])
+  })
+
+  it('operator reopening an open board sees no second panel selection (#1233)', () => {
+    // Given an already-open board
+    const selections: Array<string | null> = []
+    const { controller } = makeController({ select: panelId => { selections.push(panelId) } })
+    controller.openBoard()
+
+    // When openBoard runs again
+    controller.openBoard()
+
+    // Then the layout is not asked to re-select the same panel
+    expect(selections).toEqual(['task-board'])
+  })
+
+  it('operator keeps the board open when the layout face throws before its root entry mounts', () => {
+    // Given a layout service that throws by contract during boot
+    const { controller } = makeController({
+      select: () => { throw new Error('layout root entry has not mounted') },
+    })
+
+    // When the board opens
+    // Then the local state still flips; the throw never reaches the caller
+    expect(() => { controller.openBoard() }).not.toThrow()
+    expect(controller.getSnapshot().boardOpen).toBe(true)
+  })
+
+  it('operator clicking another panel row sees the board follow without asking the layout back', () => {
+    // Given an open board whose layout face records any request
+    const selections: Array<string | null> = []
+    const { controller } = makeController({ select: panelId => { selections.push(panelId) } })
+    controller.openBoard()
+    selections.length = 0
+
+    // When the user clicks another sidebar panel row (the layout owns selection)
+    controller.syncPanelSelection('plugins')
+
+    // Then the board's own view state follows, with no write back to the layout
+    expect(controller.getSnapshot().boardOpen).toBe(false)
+    expect(selections).toEqual([])
   })
 
   it('stays open when the current selection changes without user navigation', () => {

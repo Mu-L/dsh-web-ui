@@ -162,3 +162,4 @@ minimumReleaseAgeExclude:
   - '@linxin666/dsh-pet@0.4.2'
   - '@linxin666/dsh-client-ui-preset-center@0.4.2'
   - '@deepseek-ai/dsh-util-code-language@0.1.7-rc.2'
+  - '@deepseek-ai/dsh-client-ui-layout@0.1.7-rc.2'

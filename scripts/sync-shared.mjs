@@ -210,7 +210,6 @@ const MANIFEST = [
     source: 'shared/client/body-mutations.ts',
     targets: [
       'packages/dsh-ssh/src/client/body-mutations.ts',
-      'packages/dsh-task-board/src/client/body-mutations.ts',
       'packages/dsh-skill-explorer/src/client/body-mutations.ts',
       'packages/dsh-web-all/src/client/body-mutations.ts',
       'packages/dsh-usage/src/client/body-mutations.ts',
@@ -221,7 +220,6 @@ const MANIFEST = [
     source: 'shared/client/sidebar-entry-core.ts',
     targets: [
       'packages/dsh-ssh/src/client/sidebar-entry-core.ts',
-      'packages/dsh-task-board/src/client/sidebar-entry-core.ts',
       'packages/dsh-skill-explorer/src/client/sidebar-entry-core.ts',
     ],
   },
@@ -237,14 +235,14 @@ const MANIFEST = [
     ],
   },
   {
-    // Center-column takeover lifecycle shared by the two family panels; the
-    // wrappers supply the panel tree, container attribute names, and CSS
-    // class (pinned by each package's CSS and the semantic-attrs contract).
+    // Center-column takeover lifecycle for the ssh panel. The task board used
+    // to share it; the board now contributes through the official layout 'main'
+    // keyed seat and a 'sidebar.panellist' row, so the shell owns its container
+    // and this core serves the one consumer that still mounts at the DOM level.
     file: 'panel-mount-core.ts',
     source: 'shared/client/panel-mount-core.ts',
     targets: [
       'packages/dsh-ssh/src/client/panel-mount-core.ts',
-      'packages/dsh-task-board/src/client/panel-mount-core.ts',
     ],
   },
 ]

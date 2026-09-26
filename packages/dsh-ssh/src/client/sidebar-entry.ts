@@ -42,7 +42,7 @@ export function mountSidebarEntry(controller: PanelController, locale?: LocaleRe
     refresh: locale === undefined ? undefined : { subscribe: (listener) => locale.subscribe(listener) },
     onToggle: () => { controller.toggle() },
     position: 'after',
-    familySelectors: ['[data-dsh-taskboard-entry]', '[data-dsh-ssh-entry]'],
+    familySelectors: ['[data-dsh-ssh-entry]'],
     active: {
       subscribe: (listener) => controller.subscribe(listener),
       isOpen: () => controller.getSnapshot().panelOpen,

@@ -4,133 +4,28 @@
  * board follows the active theme (light/dark and skins).
  */
 
-/* --- center-column takeover (global rules, attribute-scoped) ----------------- */
+/* --- native panel page ------------------------------------------------------- */
 
-[data-pane='conversation'],
-[class*='centerCol'] {
-  position: relative;
-}
+/* The board is an official center-column panel: the layout mounts this element
+   as the selected keyed 'main' occupant, so the shell's own column already
+   owns position, sizing and the conversation underneath. Nothing here hides or
+   re-parents another plugin's surface — the previous DOM takeover (absolute
+   overlay over a hidden conversation subtree) is gone with it.
 
-/* The board container rides inside the conversation grid item as an extra
-   trailing child; hidden unless the board is active. */
+   The container query context stays: the board's responsive rules measure the
+   PANEL rather than the viewport, so a narrow column or a resized window
+   narrows the board at the same threshold the shell uses for its columns. */
 [data-dsh-taskboard-view] {
-  position: absolute;
-  inset: 0;
-  display: none;
-  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
   container-name: task-board-view;
   container-type: inline-size;
-  /* Opaque backdrop: the conversation subtree stays mounted under the view.
-     Even if the hide rule below were defeated by a stronger host inline
-     style, this background keeps sticky code-block banners (host z-index 6)
-     from showing through the active board (issue #100). */
   background: var(--dsw-alias-bg-base);
-}
-
-/* The center column is single-occupant; the :not() guards keep the two
-   sibling panels (task board / ssh) from fighting over visibility if both
-   activation attributes ever coexist. */
-html[data-dsh-taskboard-active]:not([data-dsh-ssh-active]) [data-dsh-taskboard-view] {
-  display: block;
-}
-
-/* While the board is active, the conversation content underneath is hidden
-   (it stays mounted and stateful). The !important is required: the dsh shell
-   (0.1.0-rc.6) wraps the conversation view in a node with an inline
-   `display: contents`, and inline styles beat a plain stylesheet rule. Without
-   it the composer (input card) stays visible at the bottom and paints over the
-   board modals' footer, hiding the run/delete buttons (issue #76).
-   The rule targets both the pane attribute and the center-column class so the
-   chat subtree (including the code-block copy banner, issue #100) stays hidden
-   whichever host container carries it. */
-html[data-dsh-taskboard-active]:not([data-dsh-ssh-active]) [data-pane='conversation'] > :not([data-dsh-taskboard-view]),
-html[data-dsh-taskboard-active]:not([data-dsh-ssh-active]) [class*='centerCol'] > :not([data-dsh-taskboard-view]) {
-  display: none !important;
-}
-
-/* --- sidebar entry row ------------------------------------------------------- */
-
-/* Same geometry as the shell's own panel rows (SidebarRoot .panelRow): 2px
-   inset with a 12px radius, 8px content padding, 36px row, 14/22 type, and the
-   primary ink — so an injected row and an official row line up column for
-   column instead of each carrying its own box. */
-.entry {
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 36px;
-  padding: 7px 8px;
-  margin: 0 2px;
-  background: transparent;
-  border: none;
-  border-radius: 12px;
-  color: var(--dsw-alias-label-primary);
-  cursor: pointer;
-  font: inherit;
-  font-size: 14px;
-  line-height: 22px;
-  text-align: left;
-  white-space: nowrap;
-}
-
-.entry:hover {
-  background: var(--dsw-alias-interactive-bg-hover);
-  color: var(--dsw-alias-label-primary);
-}
-
-.entry[data-active] {
-  background: var(--dsw-alias-interactive-bg-active);
-  color: var(--dsw-alias-label-primary);
-  font-weight: 600;
-}
-
-/* Icon box matches the shell's panel glyph exactly (16px), so the glyph column
-   and the label column land on the official rows' x positions. */
-.entryIcon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  flex: none;
-}
-
-.entryIcon svg {
-  display: block;
-  width: 16px;
-  height: 16px;
-}
-
-.entryLabel {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Collapsed rail: icon-only, centered, matching the shell's 56px rail. The
-   shell asks its own panel rows for an 18px glyph on the rail, so the icon box
-   and the svg step up together with the 12px rail radius. */
-:global([data-dsh-frame][data-sidebar-collapsed]) .entry,
-:global([data-sidebar-collapsed]) .entry {
-  justify-content: center;
-  padding: 0;
-  width: 36px;
-  height: 36px;
-  margin: 0 auto 12px;
-  border-radius: 12px;
-}
-
-:global([data-dsh-frame][data-sidebar-collapsed]) .entryIcon,
-:global([data-sidebar-collapsed]) .entryIcon,
-:global([data-dsh-frame][data-sidebar-collapsed]) .entryIcon svg,
-:global([data-sidebar-collapsed]) .entryIcon svg {
-  width: 18px;
-  height: 18px;
-}
-
-:global([data-dsh-frame][data-sidebar-collapsed]) .entryLabel,
-:global([data-sidebar-collapsed]) .entryLabel {
-  display: none;
 }
 
 /* --- board frame -------------------------------------------------------------- */
@@ -924,7 +819,6 @@ html[data-dsh-taskboard-active]:not([data-dsh-ssh-active]) [class*='centerCol'] 
     height: 100dvh;
   }
 
-  .entry,
   .card,
   .primaryButton,
   .ghostButton,
@@ -1038,7 +932,6 @@ html[data-dsh-taskboard-active]:not([data-dsh-ssh-active]) [class*='centerCol'] 
  * --------------------------------------------------------------------------- */
 
 /* --- one themed focus-visible ring (approx 2px, 2px offset) --- */
-.entry:focus-visible,
 .card:focus-visible,
 .primaryButton:focus-visible,
 .ghostButton:focus-visible,
@@ -1055,7 +948,6 @@ html[data-dsh-taskboard-active]:not([data-dsh-ssh-active]) [class*='centerCol'] 
 }
 
 /* --- unified 120ms motion across the board's interactive controls --- */
-.entry,
 .primaryButton,
 .ghostButton,
 .dangerButton,
@@ -1075,18 +967,12 @@ html[data-dsh-taskboard-active]:not([data-dsh-ssh-active]) [class*='centerCol'] 
   transform: translateY(0);
 }
 
-.entry:active,
 .primaryButton:active:not(:disabled),
 .ghostButton:active:not(:disabled),
 .dangerButton:active:not(:disabled),
 .iconButton:active:not(:disabled),
 .linkButton:active:not(:disabled) {
   transform: translateY(1px);
-}
-
-/* --- entry row (sidebar) states --- */
-.entry[data-active]:hover {
-  background: var(--dsw-specific-sidebar-nav-item-active);
 }
 
 /* --- guarded hover for the remaining icon/link buttons (defensive: never
@@ -1121,7 +1007,6 @@ html[data-dsh-taskboard-active]:not([data-dsh-ssh-active]) [class*='centerCol'] 
 
 /* --- reduced motion: strip transitions, stop the decorative spinner --- */
 @media (prefers-reduced-motion: reduce) {
-  .entry,
   .card,
   .primaryButton,
   .ghostButton,

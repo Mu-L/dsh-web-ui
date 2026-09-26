@@ -17,7 +17,7 @@ import type {} from '@deepseek-ai/dsh-host-webserver'
 import type {} from '@deepseek-ai/dsh-tools'
 import type { ToolDefinition } from '@deepseek-ai/dsh-tools'
 import type { LlmRuntime } from '@deepseek-ai/dsh-llm'
-import { TaskBoardHostService, type TaskBoardTeamDispatcher } from './host-service.ts'
+import { TaskBoardHostService, type HostTimerFace, type TaskBoardTeamDispatcher } from './host-service.ts'
 import { parseTaskDraft, TaskParseError } from './host-ai.ts'
 import { TASK_PERMISSIONS, type TaskPermission } from './core/tasks.ts'
 import { DEFAULT_SUBTASK_DEPTH, SUBTASK_DEPTH_MAX, SUBTASK_DEPTH_MIN } from './core/subtask.ts'
@@ -179,6 +179,27 @@ export function resolveToolRegistry(ctx: Context): AgentToolRegistry | undefined
   }
 }
 
+/**
+ * Resolve the native cordis timer service (dsh-base's own `cordis-plugin-timer`
+ * row). The board arms its schedule through it so unloading the row clears
+ * every pending timer with the owning fiber, instead of the row tracking raw
+ * process handles by hand. A composition that serves no timer service keeps
+ * working on the process globals.
+ * @param ctx - the plugin context.
+ * @returns the timer face, or undefined when this deployment serves none.
+ */
+export function resolveHostTimers(ctx: Context): HostTimerFace | undefined {
+  try {
+    const timer = ctx.get('timer') as Partial<HostTimerFace> | undefined
+    if (timer === undefined) return undefined
+    return typeof timer.timeout === 'function' && typeof timer.interval === 'function'
+      ? { timeout: timer.timeout.bind(timer), interval: timer.interval.bind(timer) }
+      : undefined
+  } catch {
+    return undefined
+  }
+}
+
 /** Schema default, re-read for hand-built test contexts (the loader applies them normally). */
 const DEFAULT_ANNOUNCE = false
 
@@ -301,6 +322,7 @@ function applyImpl(ctx: Context, config?: Config): void {
     workspaceRegistry: ctx.workspaceRegistry,
     sessionDefaultPermission: config?.sessionDefaultPermission ?? DEFAULT_SESSION_PERMISSION,
     maxSubtaskDepth: maxSubtaskDepth(),
+    timers: resolveHostTimers(ctx),
     team: buildTeamDispatcher(ctx, config?.teamProvider ?? DEFAULT_TEAM_PROVIDER),
     commandDispatcher: {
       async execute(sessionId, line, signal) {
