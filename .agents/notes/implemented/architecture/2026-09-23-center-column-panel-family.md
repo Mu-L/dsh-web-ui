@@ -1,82 +1,113 @@
-# Agent Note: One center-column panel family
+# Agent Note: One center-column panel family, rendered through the native layout seats
 
 Status: implemented
 
 ## Problem
 
-The `conversation` slot is single-occupant, and external plugins take the center
-column over at the DOM level. Until now that occupancy was expressed pairwise:
-each panel named ONE sibling's activation name and `<html>` attribute
-(ssh <-> task-board), and carried a `:not([sibling])` guard in its stylesheet.
+The `conversation` slot is single-occupant, and external plugins cannot declare
+slots there, so the family's feature surfaces (dsh-ssh, the task board, the
+skill center) each took the center column over at the DOM level: a container
+appended inside the column, an `<html>` activation attribute, and a stylesheet
+that hid the conversation underneath. Every piece of shell chrome — row
+geometry, the collapsed rail, the active highlight, the label, the locale
+refresh — had to be re-derived by hand, and each shell refactor risked breaking
+it.
 
-The skill center (`dsh-skill-explorer`) was a body-level overlay modal, so it
-never joined that family. Moving it into the center column makes three panels
-share one slot, which the pairwise shape cannot express: a panel that does not
-name the third panel stays logically open while invisible, and its sidebar row
-needs a second click to reopen — the exact failure the pairwise comment warned
-about, now one panel further out.
+The takeover also duplicated itself. dsh-ssh `mount.tsx` and dsh-task-board
+`board-mount.tsx` each carried the whole lifecycle, ~100 of ~130 lines
+identical modulo seven parameters, and the same behavioral fix landed twice as
+separate issues and commits: the rc.6 `centerCol` fallback (#243 / #107),
+mutual exclusion and sidebar click-out (c0a98c715), locale routing (170b3df31),
+and the L2 semantic attributes (d73bffc2a). Occupancy was then expressed
+pairwise (each panel named one sibling), which cannot express three panels: a
+panel that did not name the third stayed logically open while invisible, so its
+sidebar row needed a second click to reopen.
 
 ## Decision
 
-Occupancy lives in `shared/client/panel-mount-core.ts` as one table:
+**Every family panel renders through the shell's own seats.** A panel registers
+a row into `sidebar.panellist` and a keyed page into the layout's `main` slot
+through `ctx.slots.inject`, and drives `ctx.layout.selectPanel` (the layout's
+`panelInfo` is reconciled back into the panel's controller). The shell owns the
+row box, label, tooltip, active highlight, collapsed rail, the panel switch and
+the window-chrome interplay, exactly as it does for the shipped Plugins and
+Schedule pages.
 
-```ts
-export const PANEL_FAMILY: readonly PanelFamilyMember[] = [
-  { panel: 'taskboard', activeAttribute: 'data-dsh-taskboard-active' },
-  { panel: 'ssh', activeAttribute: 'data-dsh-ssh-active' },
-  { panel: 'skill-explorer', activeAttribute: 'data-dsh-skill-explorer-active' },
-]
-```
+**The layout's keyed `main` slot is the single occupancy authority.** The
+`PANEL_FAMILY` table, the `dsh-panel-activate` event and the shared
+`shared/client/panel-mount-core.ts` / `shared/client/sidebar-entry-core.ts`
+cores are deleted, along with every synced copy and the takeover wrappers
+(`mount.tsx`, `sidebar-entry.ts`, the package-local core copies). Occupancy is
+no longer something the family negotiates: the shell renders the selected key
+and unmounts the rest.
 
-Opening a panel clears every other row's attribute and broadcasts its own name on
-`dsh-panel-activate`; an open panel closes when the received name is not its own.
-Consumers pass only `panelName` plus their own `activeAttribute` — the sibling
-options are gone, and the pairwise `:not()` guards remain only as a tie-break if
-two attributes ever coexist.
+Two preconditions came out of the migration, and both are now part of the
+pattern:
 
-The skill center's browser half is now a center-column panel: `mount.tsx` wraps
-`mountCenterPanel`, and `src/client/panel/` holds the shell (`SkillPanel.tsx`:
-header with the back control, tab bar, content), the skills, create and edit tabs
-(the edit tab appears while a skill is being edited, as the plugin's read/update
-flow does), plus `panel.module.css` (renamed from `skill-panel.module.css`) in the family
-vocabulary — `.panel` / `.panelHeader` / `.tabBar` / `.tab` / `.toolbar` /
-`.ghostButton` / `.primaryButton` / `.linkButton` / `.badge` / `.empty` /
-`.banner` / `.field` — still theme-token-only under the package's style rule.
-
-Semantic parts follow: `card` and `head` are retired (no modal card), `tab-bar` /
-`tab` / `skill-row` / `filter-bar` remain, and the `wallpaper-exclusive` skin's
-skill-center anchors move from `card` + `head` to the plugin root plus
-`skill-row`. The panel root joins that skin's plugin-panel glass list.
+1. **A panel's view state lives in its controller, never in the page
+   component.** The layout mounts a keyed page only while its panel is
+   selected. Component-local state therefore dropped the open tab and any
+   in-progress edit on every panel switch. The task board's state was already
+   controller-owned; the skill center's tab and editor target, and ssh's active
+   tab, connect request and terminal session id, moved into theirs.
+2. **A long-lived resource is never owned by the view.** The ssh terminal's PTY
+   shell moved to the host (`src/engine/terminal-sessions.ts`): a session is
+   created once, any socket attaches by id, and a view unmount only detaches.
+   The takeover used to provide this by keeping every visited tree mounted, so
+   losing it would have killed a live shell session on every panel switch.
 
 ## Testing
 
-The family lifecycle test (`packages/dsh-ssh/tests/center-panel-lifecycle.test.tsx`)
-mounts all three panels and asserts that a third panel evicts whichever panel
-holds the column, including the html attributes on both sides. The skill center's
-own panel tests cover the shell (header, tabs, active tab), the back control
-closing the controller, the last-good list policy, mutation identity, and the
-create tab resolving its workspace through one list call when it is opened first.
+- `native-panel-registry.spec.ts` in each of dsh-task-board, dsh-skill-explorer
+  and dsh-ssh drives the real `SlotCore` the shell installs, asserting the
+  keyed `main` entry, the list row (id, order, function label) and that
+  disposal clears both.
+- The controller-state specs (`panel-state.spec.ts` for the skill center, the
+  ssh panel suite) pin that the open tab, the editor target and the terminal
+  session id survive a panel switch and that a snapshot stays referentially
+  stable between changes.
+- `packages/dsh-ssh/tests/terminal-sessions.test.ts` drives the host session
+  table directly: detach/reattach with scrollback replay, explicit close, idle
+  reap, and the exit grace window.
+- The panel component suites cover the pages' own rendering and semantic
+  attributes.
 
 ## Alternatives considered
 
-- **Pairwise siblings extended to three** (every panel names the other two): N²
-  configuration, and each new panel must edit the other panels' mounts — the
+- **Keep the DOM takeover** (and the shared core it needed): rejected — it
+  re-derives shell chrome that the shell already owns, and the family had
+  already paid for the duplication twice over.
+- **Pairwise siblings extended to three** (every panel names the other two):
+  N² configuration, and each new panel must edit the other panels' mounts; the
   failure mode is a stale pairing, not a missing table row.
-- **Self-contained takeover inside the skill center**, closing the other panels
-  by broadcasting their names: zero cross-package edits, but the mechanism turns
-  into a per-panel hack and the next panel pays the same cost again.
-- **Keep the overlay modal and restyle only**: cheapest, but the panel would not
-  be reachable or dismissable like the rest of the family, which is what the
-  migration was for.
+- **Self-contained takeover inside each panel**, closing the others by
+  broadcasting their names: zero cross-package edits, but the mechanism becomes
+  a per-panel hack and the next panel pays the same cost again.
+- **Extract the takeover into a runtime npm package** imported by the family:
+  rejected — client bundles must stay self-contained per the browser bundle
+  purity rules; the sync-shared committed-copy pattern was the repo's
+  established mechanism, and the migration removed the need for it entirely.
+- **Keep the view native but hold the terminal in a persistent off-screen
+  container**: smaller than moving the session to the host, but it retains the
+  very DOM lifecycle the migration exists to retire, survives neither a reload
+  nor a dropped socket, and would coexist with the seats it is meant to replace.
+- **Keep the skill center's overlay modal and restyle only**: cheapest, but the
+  panel would not be reachable or dismissable like the rest of the family,
+  which is what its migration was for.
 
 ## Consequences
 
-- Opening any family panel closes the other two, controller state included; the
-  "second click does nothing" failure is gone by construction.
-- A fourth center-column panel is one `PANEL_FAMILY` row; its own stylesheet
-  still needs a guard if it wants a tie-break preference.
-- The skill center has no mask-close or dismiss-on-Escape path any more: it
-  closes through the back control, a sidebar session-row click, or family
-  eviction. Escape only clears the search box.
-- `dsh-skill-explorer` now generates a `panel-mount-core.ts` copy, so
-  `scripts/sync-shared.mjs` lists three consumers for that file.
+- Adding a family panel is one `sidebar.panellist` registration plus one keyed
+  `main` registration; occupancy, the row box and the rail come for free, and
+  there is no family table to keep in step.
+- A panel that owns live resources must give them a lifetime longer than its
+  page. The host-side session registry is the reference implementation.
+- The skins' injected-row hooks (`data-dsh-ssh-entry`,
+  `data-dsh-skill-explorer-entry`, `data-dsh-taskboard-entry`) no longer match
+  anything: those rows are the shell's now. The panel anchors
+  (`data-dsh-ssh-view`, `data-dsh-skill-explorer-view`,
+  `data-dsh-taskboard-view`) and the `data-dsh-plugin` markers stay on the
+  page wrappers, so panel-level skin rules keep working.
+- dsh-ssh is now the only package that keeps a DOM-level extension path at all
+  (`body-mutations` is still shared with the aggregate shell and the usage
+  card); it exists for surfaces outside the family, not for panel occupancy.

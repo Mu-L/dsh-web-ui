@@ -2,7 +2,7 @@
 
 Status: implemented
 
-Supersession check: no active note owns the family plugins' DOM-observation cost. The retired dsh-perf notes ([render pipeline batch 2](../feature/2026-08-26-dsh-perf-render-pipeline-batch2.md), [attribution scoreboard](../feature/2026-08-27-dsh-perf-plugin-attribution-scoreboard.md)) optimised the official render pipeline and attributed cost; they record the ranking layer this note acts on but do not cover observation fan-out or the skin shell syncs. [panel-mount-core extraction](../simplification/2026-09-02-panel-mount-core-extraction.md) created the shared core this note re-plumbs.
+Supersession check: no active note owns the family plugins' DOM-observation cost. The retired dsh-perf notes ([render pipeline batch 2](../feature/2026-08-26-dsh-perf-render-pipeline-batch2.md), [attribution scoreboard](../feature/2026-08-27-dsh-perf-plugin-attribution-scoreboard.md)) optimised the official render pipeline and attributed cost; they record the ranking layer this note acts on but do not cover observation fan-out or the skin shell syncs. [One center-column panel family](../architecture/2026-09-23-center-column-panel-family.md) owns the shared core this note re-plumbs; that core has since been removed, because every family panel now renders through the native layout seats.
 
 ## Problem
 

@@ -6,7 +6,7 @@ Status: implemented
 
 [共享观察器](2026-09-11-combined-plugin-mutation-cost.md)减少了原生观察器，但当前家族订阅者全部忽略收集的 mutation 记录。动画帧队列暂停时仍会保留每条记录及其移除的子树。最后一次退订只断开观察器，没有取消该帧。六个订阅者进行 1,000 次子树替换时，三轮基线均保留 1,001 条记录，清理后仍有一个待执行回调。
 
-[共享面板挂载](../../implemented/simplification/2026-09-02-panel-mount-core-extraction.md)在 SSH 和任务看板尚未打开时就创建 React 根，导致 SSH 默认的主机页在页面启动期间查询数据。访问过的隧道页在面板关闭或页面隐藏后仍每五秒轮询，慢查询还可能重叠。聚合 shim 的回调已经由共享 hub 合并，却又安排第二个动画帧。
+[共享面板挂载](../../implemented/architecture/2026-09-23-center-column-panel-family.md)（其后已移除）在 SSH 和任务看板尚未打开时就创建 React 根，导致 SSH 默认的主机页在页面启动期间查询数据。访问过的隧道页在面板关闭或页面隐藏后仍每五秒轮询，慢查询还可能重叠。聚合 shim 的回调已经由共享 hub 合并，却又安排第二个动画帧。
 
 ## Decision
 

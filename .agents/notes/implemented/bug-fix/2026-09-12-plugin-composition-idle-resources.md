@@ -6,7 +6,7 @@ Status: implemented
 
 The [shared observer](2026-09-11-combined-plugin-mutation-cost.md) reduces native observers, but all current family subscribers ignore the collected mutation records. A paused animation-frame queue still retains every record and its removed subtrees. Last-unsubscribe disconnects the observer without cancelling that frame. With six subscribers and 1,000 subtree replacements, three baseline runs each retain 1,001 records and one queued callback after disposal.
 
-The [shared panel mount](../../implemented/simplification/2026-09-02-panel-mount-core-extraction.md) creates SSH and Task Board React roots before either panel is opened. SSH's default Hosts tab consequently queries its data during page startup. A visited Tunnels tab keeps polling every five seconds after the panel closes or the page is hidden, and slow polls can overlap. The aggregate shim also schedules a second animation frame from a callback already coalesced by the shared hub.
+The [shared panel mount](../../implemented/architecture/2026-09-23-center-column-panel-family.md) (since removed) created SSH and Task Board React roots before either panel was opened. SSH's default Hosts tab consequently queries its data during page startup. A visited Tunnels tab keeps polling every five seconds after the panel closes or the page is hidden, and slow polls can overlap. The aggregate shim also schedules a second animation frame from a callback already coalesced by the shared hub.
 
 ## Decision
 

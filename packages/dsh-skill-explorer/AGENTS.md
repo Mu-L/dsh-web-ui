@@ -19,8 +19,8 @@ DSH Web GUI 的**技能中心**插件：侧边栏「技能中心」入口打开�
   页签，编辑时多出编辑页签），并驱动 `ctx.layout.selectPanel`——与任务看板
   同一形态，行盒 / 标签 / 高亮 / 折叠轨道归 shell。页签与编辑目标存在
   `panel/controller.ts`，因为布局只在该面板被选中时挂载页面，组件本地 state
-  会在切面板时丢失；页面只读 controller 快照。ssh 仍是 DOM 接管期间，本包保留
-  `dsh-panel-activate` 过渡握手（`native-panel.tsx`），ssh 也迁原生后一并删除。
+  会在切面板时丢失；页面只读 controller 快照。占位完全由布局的 keyed `main`
+  槽决定，本包不再参与任何家族互斥协议。
 - 纯逻辑（扫描/分组/frontmatter 解析）在 host 侧单测锁定行为
   （`tests/collect.spec.ts`、`tests/frontmatter.spec.ts`、
   `tests/routes.spec.ts`、`tests/access.spec.ts`）；路由围栏与错误路径必须带测试。

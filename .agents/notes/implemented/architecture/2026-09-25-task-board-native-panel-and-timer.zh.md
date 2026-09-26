@@ -13,8 +13,7 @@ Status: implemented
 - **看板贡献 shell 自己的面板座位。** `src/client/native-panel.tsx` 注册一个 `sidebar.panellist` 行（list 座位：`id`/`order`/`label`）和一个 keyed `main` 页面（`key: TASK_BOARD_PANEL_ID`），两者都走 `ctx.slots.inject`——它只在宿主 shell 插件声明该座位之后才触发，因此看板、ui-layout 与 ui-sidebar 的加载顺序无关紧要，而无法提供该座位的 shell 只会让看板缺席，不会让启动失败。行只提供一个字形组件，并通过 `size` 采用 shell 要求的尺寸；按钮、标签、tooltip、选中态与折叠栏都归 shell。
 - **面板选择归布局，控制器跟随它。** `BoardController` 新增可选的 `panel` 面；`openBoard()`/`closeBoard()` 先翻转快照再调 `ctx.layout.selectPanel`（`TASK_BOARD_PANEL_ID` / `null`），`syncPanelSelection` 把控制器之外产生的选择（点了别的行，或布局丢弃该面板 id）回灌进 `boardOpen`。该面可选，使控制器无需 shell 也可测；`selectPanel` 抛错（布局挂载前的既定行为）在状态翻转后被吞掉。
 - **本包的 DOM 接管整体退役。** `board-mount.tsx`、`sidebar-entry.ts`、包内的 `panel-mount-core.ts`/`sidebar-entry-core.ts`/`body-mutations.ts` 副本，以及接管 CSS（`html[data-dsh-taskboard-active]` 可见性契约、`.entry` 行几何与折叠栏规则）全部移除。`[data-dsh-taskboard-view]` 保留在页面根上作为 L2 语义锚点，并改为声明 container query 上下文，因此看板的响应式规则仍然量测它所在的面板而不是视口。`sidebar-entry-core.ts`/`panel-mount-core.ts` 继续与 dsh-ssh（前者还有 skill-explorer）共享，各少一个消费方。
-- **跨插件互斥被显式保留。** dsh-ssh 仍以 DOM 接管中栏，只要 `html[data-dsh-ssh-active]` 在，它的样式就会隐藏中栏里其它所有子节点——包括看板页面。因此看板参与共享的 `dsh-panel-activate` 协议：打开看板时广播 `taskboard`（让 ssh 交出中栏），收到 `ssh` 广播时关闭看板。事件与 detail 取值是 `shared/client/panel-mount-core.ts` 拥有的契约。
-- **定时任务改走原生定时器服务。** 宿主经 `ctx.get('timer')` 解析框架的 `timer` 行（`resolveHostTimers`，容忍没有该服务的宿主），并作为 `HostTimerFace` 注入。30 秒调度心跳被替换为一次性定时器，按账本最近目标重新武装：`HostLedger.nextArmedRunAt(now)` 给出触发时刻，`armSchedule()` 收紧延时并在每次触发后重新武装。启动、恢复以及每个会写调度的动作（`set-schedule`/`delete`/`archive`）都会刷新武装；若某次触发的目标已过去超过 `RECOVERY_TOLERANCE_MS`（60 秒），走恢复路径（`skipMissed` 后重新武装），而不是重放错过的出现。5 秒的会话名册轮询是仅存的周期定时器。
+- **跨插件互斥在接管时期是显式的。** ssh（以及一段时间内的技能中心）仍以 DOM 接管中栏，因此看板参与共享的 `dsh-panel-activate` 协议来彼此交出中栏。该协议、它的 `PANEL_FAMILY` 表与 `panel-mount-core` 核心已随接管一并移除：ssh 与技能中心注册的是本 note 描述的同一套原生座位，渲染哪个页面只由布局决定（见[一个中栏面板家族](2026-09-23-center-column-panel-family.md)）。
 
 ## Testing
 

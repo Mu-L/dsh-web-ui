@@ -1,3 +1,5 @@
-# Bilingual-pair consistency record (docs/i18n.md).
-2026-09-11-combined-plugin-mutation-cost.md: 6b7de7305da1a6e58bef1f05f8d4b3000f7db061
-2026-09-11-combined-plugin-mutation-cost.zh.md: db8077291c25196a2721b9adba1ca285a3aa20d8
+# Bilingual-pair consistency record (docs/i18n.md): the git blob hash of each
+# side as of the last confirmed-consistent state. Both languages carry equal authority;
+# after editing either side, bring the other along and re-record with git hash-object.
+2026-09-11-combined-plugin-mutation-cost.md: 55538ea4ecd648737afd2056d8600efb21a3599e
+2026-09-11-combined-plugin-mutation-cost.zh.md: 7086193a067a488ef7bc8d6494d888653fc6b8c3

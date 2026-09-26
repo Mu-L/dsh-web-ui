@@ -1,3 +1,5 @@
-# Bilingual-pair consistency record (docs/i18n.md).
-2026-09-12-plugin-composition-idle-resources.md: 4b43f41e010fc77c76ab16801af1aadf19994812
-2026-09-12-plugin-composition-idle-resources.zh.md: 17b6351c102543a4d5c882249e167520696c407d
+# Bilingual-pair consistency record (docs/i18n.md): the git blob hash of each
+# side as of the last confirmed-consistent state. Both languages carry equal authority;
+# after editing either side, bring the other along and re-record with git hash-object.
+2026-09-12-plugin-composition-idle-resources.md: 91feba679394efd71af34742c94bab30c29322b4
+2026-09-12-plugin-composition-idle-resources.zh.md: fd59404b7d208f9935b4b54e9c97b27692354f3d

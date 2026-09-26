@@ -2,7 +2,7 @@
 
 Status: implemented
 
-Supersession check: 没有现行 note 拥有家族插件 DOM 观察成本这一决策。已退役的 dsh-perf 系列（[渲染管线 batch 2](../feature/2026-08-26-dsh-perf-render-pipeline-batch2.md)、[归因记分板](../feature/2026-08-27-dsh-perf-plugin-attribution-scoreboard.md)）优化的是官方渲染管线并做成本归因，它们记录了本 note 所据以行动的排名层，但未涉及观察器扇出与皮肤 shell 同步。[panel-mount-core 抽取](../simplification/2026-09-02-panel-mount-core-extraction.md) 产出了本 note 重新接线的共享核心。
+Supersession check: 没有现行 note 拥有家族插件 DOM 观察成本这一决策。已退役的 dsh-perf 系列（[渲染管线 batch 2](../feature/2026-08-26-dsh-perf-render-pipeline-batch2.md)、[归因记分板](../feature/2026-08-27-dsh-perf-plugin-attribution-scoreboard.md)）优化的是官方渲染管线并做成本归因，它们记录了本 note 所据以行动的排名层，但未涉及观察器扇出与皮肤 shell 同步。[一个中栏面板家族](../architecture/2026-09-23-center-column-panel-family.md) 拥有本 note 重新接线的共享核心；该核心其后已被移除，因为家族面板现在统一走原生布局座位。
 
 ## Problem
 
