@@ -34,10 +34,12 @@ body:not([data-ds-dark-theme]) [class*="md-code-block"] {
 /* Web-ui plugin panels: frosted over the wallpaper, without touching the
    conversation/dialog area. Driven by the fixed glass variables, so the
    whole panel family (task-board / ssh / git-graph / skill-explorer / ... )
-   uses fixed glass instead of a runtime slider. */
-[data-dsh-plugin="task-board"]:not([data-dsh-part="sidebar-entry"]),
-[data-dsh-plugin="ssh"]:not([data-dsh-part="sidebar-entry"]),
-[data-dsh-plugin="skill-explorer"]:not([data-dsh-part="sidebar-entry"]),
+   uses fixed glass instead of a runtime slider. The sidebar rows these
+   plugins contribute are shell-owned panel rows and never carry the plugin
+   attribute, so only the panel roots fall in scope here. */
+[data-dsh-plugin="task-board"],
+[data-dsh-plugin="ssh"],
+[data-dsh-plugin="skill-explorer"],
 [data-dsh-plugin="git-graph"],
 [data-dsh-plugin="pet"],
 [data-dsh-plugin="remote-web-ui"],
@@ -318,72 +320,33 @@ body:not([data-ds-dark-theme]) button[class*="_primary"]:not([data-dsh-plugin] *
   background-color: #2563eb !important;
 }
 
-/* Sidebar keys (任务看板 / ssh / 技能中心 injected rows): fully transparent at
+/* Sidebar keys (任务看板 / ssh / 技能中心 panel rows): fully transparent at
    rest, hover keeps a subtle tint —NOT in the fixed-glass set (direction:
-   keys are transparent, only their surfaces' backgrounds use fixed glass). */
-[data-dsh-part="sidebar-entry"],
-[data-dsh-taskboard-entry],
-[data-dsh-ssh-entry],
-[data-dsh-skill-explorer-entry] {
+   keys are transparent, only their surfaces' backgrounds use fixed glass).
+   The rows are shell-owned `sidebar.panellist` rows now, so they are addressed
+   through the L2 `sidebar-entry` part —the skin center's compat adapter stamps
+   it on rows carrying a plugin's own glyph identity
+   (`data-dsh-panel-entry`), which the :has() guard keeps explicit. Without the
+   rest fill the shell's per-plugin nav-item hover/active colours leak through
+   and the three keys look inconsistent. */
+[data-dsh-part="sidebar-entry"]:has([data-dsh-panel-entry]) {
   background-color: rgba(0, 0, 0, 0) !important;
 }
 
-[data-dsh-part="sidebar-entry"]:hover,
-[data-dsh-taskboard-entry]:hover,
-[data-dsh-ssh-entry]:hover,
-[data-dsh-skill-explorer-entry]:hover {
+[data-dsh-part="sidebar-entry"]:has([data-dsh-panel-entry]):hover {
   background-color: var(--dsw-wallpaper-glass-hover) !important;
 }
 
-[data-dsh-part="sidebar-entry"][aria-current="true"],
-[data-dsh-part="sidebar-entry"][data-active],
-[data-dsh-taskboard-entry][aria-current="true"],
-[data-dsh-taskboard-entry][data-active],
-[data-dsh-ssh-entry][aria-current="true"],
-[data-dsh-ssh-entry][data-active],
-[data-dsh-skill-explorer-entry][aria-current="true"],
-[data-dsh-skill-explorer-entry][data-active] {
+[data-dsh-part="sidebar-entry"]:has([data-dsh-panel-entry])[aria-current="page"],
+[data-dsh-part="sidebar-entry"]:has([data-dsh-panel-entry])[data-active] {
   background-color: var(--dsw-wallpaper-glass-active) !important;
 }
 
-/* Sidebar plugin entries share one label + icon color so task-board, ssh and
-   skill-explorer rows match the official nav items (icons inherit currentColor).
-   Anchored on the L2 family part (issue #506) plus the row attributes that the
-   shared sidebar-entry-core always outputs —the most reliable existence
-   anchors even if a family build ever drops the part attribute. */
-[data-slot="sidebar"] [class*="entry"],
-[data-dsh-part="sidebar-entry"],
-[data-dsh-taskboard-entry],
-[data-dsh-ssh-entry],
-[data-dsh-skill-explorer-entry] {
+/* Sidebar plugin rows share one label + icon color so task-board, ssh and
+   skill-explorer rows match the official nav items (icons inherit currentColor). */
+[data-dsh-part="sidebar-entry"]:has([data-dsh-panel-entry]),
+[data-dsh-part="sidebar-entry"]:has([data-dsh-panel-entry]) svg {
   color: var(--dsw-alias-label-primary, #f9fafb) !important;
-}
-
-[data-dsh-part="sidebar-entry"] svg,
-[data-dsh-taskboard-entry] svg,
-[data-dsh-ssh-entry] svg,
-[data-dsh-skill-explorer-entry] svg {
-  color: var(--dsw-alias-label-primary, #f9fafb) !important;
-}
-
-/* The injected entry rows must read uniformly transparent at rest regardless of
-   which attributes they carry in a given shell build —without this, the
-   shell's own per-plugin nav-item hover/active fills (task-board blue, ssh
-   purple) leak through and the three keys look inconsistent. The class-suffix
-   family covers task-board / ssh / skill-explorer rows even where the
-   data-dsh-part attribute is absent. */
-[data-slot="sidebar"] [class*="entry"] {
-  background-color: rgba(0, 0, 0, 0) !important;
-}
-
-[data-slot="sidebar"] [class*="entry"]:hover {
-  background-color: var(--dsw-wallpaper-glass-hover) !important;
-}
-
-[data-slot="sidebar"] [class*="entry"][data-active],
-[data-slot="sidebar"] [class*="entry"][aria-current="true"],
-[data-slot="sidebar"] [class*="entry"][aria-selected="true"] {
-  background-color: var(--dsw-wallpaper-glass-active) !important;
 }
 
 /* --- Top-bar subagent board (trajectory) --------------------------------------

@@ -691,7 +691,7 @@ window.__ModuleLoader__.load({
 		/** The building package's version, when the bundle carries it. */
 		function bakedVersion$8() {
 			try {
-				return "0.4.2";
+				return "0.4.3";
 			} catch {
 				return;
 			}
@@ -1235,7 +1235,7 @@ window.__ModuleLoader__.load({
 		/** The building package's version, when the bundle carries it. */
 		function bakedVersion$7() {
 			try {
-				return "0.4.2";
+				return "0.4.3";
 			} catch {
 				return;
 			}
@@ -3866,7 +3866,7 @@ window.__ModuleLoader__.load({
 		/** The building package's version, when the bundle carries it. */
 		function bakedVersion$6() {
 			try {
-				return "0.4.2";
+				return "0.4.3";
 			} catch {
 				return;
 			}
@@ -8871,11 +8871,17 @@ window.__ModuleLoader__.load({
 		* The sidebar row glyph the shell asks for at its own size and active state.
 		* The shell owns the button, label, tooltip and rail geometry; this component
 		* draws only the glyph, like every other panel row.
+		*
+		* The glyph carries `data-dsh-panel-entry` because it is the only DOM the
+		* panel's own code owns inside that shell-owned row: the L2 contract (skins)
+		* resolves which row belongs to which plugin through it, since the shell
+		* stamps no per-entry hook of its own (see contracts/semantic-attrs-v1.md).
 		* @param props - the shell's icon share: square edge and selection state.
 		* @returns the decorative board glyph.
 		*/
 		function TaskBoardPanelIcon({ size }) {
 			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
+				"data-dsh-panel-entry": TASK_BOARD_PANEL_ID,
 				viewBox: "0 0 16 16",
 				width: size,
 				height: size,
@@ -10055,7 +10061,7 @@ window.__ModuleLoader__.load({
 		/** The building package's version, when the bundle carries it. */
 		function bakedVersion$5() {
 			try {
-				return "0.4.2";
+				return "0.4.3";
 			} catch {
 				return;
 			}
@@ -12304,7 +12310,7 @@ window.__ModuleLoader__.load({
 		/** The building package's version, when the bundle carries it. */
 		function bakedVersion$4() {
 			try {
-				return "0.4.2";
+				return "0.4.3";
 			} catch {
 				return;
 			}
@@ -16626,7 +16632,7 @@ window.__ModuleLoader__.load({
 		/** The building package's version, when the bundle carries it. */
 		function bakedVersion$3() {
 			try {
-				return "0.4.2";
+				return "0.4.3";
 			} catch {
 				return;
 			}
@@ -18800,7 +18806,7 @@ window.__ModuleLoader__.load({
 		/** The building package's version, when the bundle carries it. */
 		function bakedVersion$2() {
 			try {
-				return "0.4.2";
+				return "0.4.3";
 			} catch {
 				return;
 			}
@@ -35000,11 +35006,17 @@ window.__ModuleLoader__.load({
 		* The sidebar row glyph the shell asks for at its own size and active state.
 		* The shell owns the button, label, tooltip and rail geometry; this component
 		* draws only the glyph, like every other panel row.
+		*
+		* The glyph carries `data-dsh-panel-entry` because it is the only DOM this
+		* panel's own code owns inside that shell-owned row: the L2 contract (skins)
+		* resolves which row belongs to which plugin through it, since the shell
+		* stamps no per-entry hook of its own (see contracts/semantic-attrs-v1.md).
 		* @param props - the shell's icon share: square edge and selection state.
 		* @returns the decorative terminal glyph.
 		*/
 		function SshPanelIcon({ size }) {
 			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
+				"data-dsh-panel-entry": "ssh",
 				viewBox: "0 0 16 16",
 				width: size,
 				height: size,
@@ -35191,7 +35203,7 @@ window.__ModuleLoader__.load({
 		/** The building package's version, when the bundle carries it. */
 		function bakedVersion$1() {
 			try {
-				return "0.4.2";
+				return "0.4.3";
 			} catch {
 				return;
 			}
@@ -38606,11 +38618,17 @@ window.__ModuleLoader__.load({
 		* The sidebar row glyph the shell asks for at its own size and active state.
 		* The shell owns the button, label, tooltip and rail geometry; this component
 		* draws only the glyph, like every other panel row.
+		*
+		* The glyph carries `data-dsh-panel-entry` because it is the only DOM this
+		* panel's own code owns inside that shell-owned row: the L2 contract (skins)
+		* resolves which row belongs to which plugin through it, since the shell
+		* stamps no per-entry hook of its own (see contracts/semantic-attrs-v1.md).
 		* @param props - the shell's icon share: square edge and selection state.
 		* @returns the decorative skill-center glyph.
 		*/
 		function SkillExplorerPanelIcon({ size }) {
 			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
+				"data-dsh-panel-entry": SKILL_EXPLORER_PANEL_ID,
 				viewBox: "0 0 16 16",
 				width: size,
 				height: size,
@@ -38683,7 +38701,7 @@ window.__ModuleLoader__.load({
 		/** The building package's version, when the bundle carries it. */
 		function bakedVersion() {
 			try {
-				return "0.4.2";
+				return "0.4.3";
 			} catch {
 				return;
 			}

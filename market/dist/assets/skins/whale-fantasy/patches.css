@@ -517,22 +517,17 @@ body [data-dsh-part='new-session'] svg {
   color: #39FFD1;
   filter: drop-shadow(0 0 6px #39ffd18c);
 }
-body [data-dsh-taskboard-entry],
-body [data-dsh-ssh-entry],
-body [data-dsh-part='sidebar-entry'] {
+body [data-dsh-part='sidebar-entry']:has([data-dsh-panel-entry]) {
   border-radius: 10px !important;
   border: 1px solid transparent;
   background-color: transparent !important;
   transition: background-color 0.13s ease, border-color 0.13s ease;
 }
-body [data-dsh-taskboard-entry]:hover,
-body [data-dsh-ssh-entry]:hover,
-body [data-dsh-part='sidebar-entry']:hover {
+body [data-dsh-part='sidebar-entry']:has([data-dsh-panel-entry]):hover {
   background-color: #3a7bff21 !important;
   border-color: #3a7bff4d;
 }
-body [data-dsh-taskboard-entry][data-active='true'],
-body [data-dsh-ssh-entry][data-active='true'] {
+body [data-dsh-part='sidebar-entry']:has([data-dsh-panel-entry])[aria-current='page'] {
   background-color: #3a7bff29 !important;
   box-shadow: inset 2px 0 0 var(--ff-cyan);
 }

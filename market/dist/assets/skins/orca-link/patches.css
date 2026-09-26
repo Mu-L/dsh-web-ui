@@ -724,12 +724,12 @@ body[data-ds-dark-theme] .orca-ch-dshWordmark {
   position: relative;
 }
 
-body[data-orca-sidebar-wide] [data-dsh-surface="sidebar"] > :first-child > button[data-dsh-part="sidebar-entry"] {
+body[data-orca-sidebar-wide] [data-dsh-surface="sidebar"] > :first-child > nav > button[data-dsh-part="sidebar-entry"] {
   z-index: 3;
   margin-top: calc(var(--orca-stage, 300px) - 116px);
 }
 
-body[data-orca-sidebar-wide] [data-dsh-surface="sidebar"] > :first-child:has( > button[data-dsh-part="sidebar-entry"]) [class*="regionArea"], body[data-orca-sidebar-wide] [data-dsh-surface="sidebar"] > :first-child > button[data-dsh-part="sidebar-entry"] ~ button[data-dsh-part="sidebar-entry"] {
+body[data-orca-sidebar-wide] [data-dsh-surface="sidebar"] > :first-child:has( > nav > button[data-dsh-part="sidebar-entry"]) [class*="regionArea"], body[data-orca-sidebar-wide] [data-dsh-surface="sidebar"] > :first-child > nav > button[data-dsh-part="sidebar-entry"] ~ button[data-dsh-part="sidebar-entry"] {
   margin-top: 0;
 }
 
@@ -2072,7 +2072,7 @@ body[data-orca-scene="hero"] .orca-ch-standby {
     margin-top: 0;
   }
 
-  body[data-orca-sidebar-wide] [data-dsh-surface="sidebar"] > :first-child > button[data-dsh-part="sidebar-entry"] {
+  body[data-orca-sidebar-wide] [data-dsh-surface="sidebar"] > :first-child > nav > button[data-dsh-part="sidebar-entry"] {
     margin-top: 0;
   }
 

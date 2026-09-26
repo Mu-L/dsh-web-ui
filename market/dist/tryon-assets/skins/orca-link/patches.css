@@ -724,12 +724,12 @@ html[data-dsh-skin="orca-link"] :is([data-pane="sidebar"], [data-dsh-surface="si
   position: relative;
 }
 
-html[data-dsh-skin="orca-link"] body[data-orca-sidebar-wide] [data-dsh-surface="sidebar"] > :first-child > button[data-dsh-part="sidebar-entry"] {
+html[data-dsh-skin="orca-link"] body[data-orca-sidebar-wide] [data-dsh-surface="sidebar"] > :first-child > nav > button[data-dsh-part="sidebar-entry"] {
   z-index: 3;
   margin-top: calc(var(--orca-stage, 300px) - 116px);
 }
 
-html[data-dsh-skin="orca-link"] body[data-orca-sidebar-wide] [data-dsh-surface="sidebar"] > :first-child:has( > button[data-dsh-part="sidebar-entry"]) [class*="regionArea"], html[data-dsh-skin="orca-link"] body[data-orca-sidebar-wide] [data-dsh-surface="sidebar"] > :first-child > button[data-dsh-part="sidebar-entry"] ~ button[data-dsh-part="sidebar-entry"] {
+html[data-dsh-skin="orca-link"] body[data-orca-sidebar-wide] [data-dsh-surface="sidebar"] > :first-child:has( > nav > button[data-dsh-part="sidebar-entry"]) [class*="regionArea"], html[data-dsh-skin="orca-link"] body[data-orca-sidebar-wide] [data-dsh-surface="sidebar"] > :first-child > nav > button[data-dsh-part="sidebar-entry"] ~ button[data-dsh-part="sidebar-entry"] {
   margin-top: 0;
 }
 
@@ -2072,7 +2072,7 @@ html[data-dsh-skin="orca-link"] [data-orca-link-todo-progress-cell="8"] {
     margin-top: 0;
   }
 
-  html[data-dsh-skin="orca-link"] body[data-orca-sidebar-wide] [data-dsh-surface="sidebar"] > :first-child > button[data-dsh-part="sidebar-entry"] {
+  html[data-dsh-skin="orca-link"] body[data-orca-sidebar-wide] [data-dsh-surface="sidebar"] > :first-child > nav > button[data-dsh-part="sidebar-entry"] {
     margin-top: 0;
   }
 
