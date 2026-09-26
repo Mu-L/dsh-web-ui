@@ -1590,6 +1590,18 @@
       "repo": "https://github.com/1420079678-ctrl/agent-body",
       "category": "tools",
       "subcategory": "dev"
+    },
+    {
+      "id": "dsh-model-priority",
+      "name": "模型顺序",
+      "rank": 125,
+      "nameEn": "Model Priority",
+      "author": "mengge237",
+      "description": "自定义模型 / 提供方的排列顺序：在「设置 → 模型」里你自己配置的提供方卡片内拖拽调整（宿主内置的 DeepSeek 卡片里这块是只读清单），宿主的模型列表按这份顺序返回（稳定排序，只重排，不增删条目、不改字段）。顺序写回当前生效的配置真源，写前自动备份，并校验条目集合未增删、总行数不变、块外逐行一致、重读顺序达标 —— 任一道不过就整次拒绝，一个字节都不写。0.1.5 线写 settings.yaml，0.1.7 线起写 profile 用户层的 cordis.patch.yml，两代形状都认。",
+      "descriptionEn": "Custom provider and model ordering: drag to reorder inside the provider cards you configured yourself on the Models settings page (the built-in DeepSeek card renders as a read-only list), and the host model list follows that order (stable sort - reordering only, never adding, dropping or rewriting entries). The order is written back to whichever config source is live, with an automatic backup plus checks that the id set is unchanged, the line count is unchanged, every line outside the block is byte-identical and the order reads back correct; if any check fails the whole write is refused and nothing is touched. Writes settings.yaml on the 0.1.5 line and the profile user layer cordis.patch.yml from 0.1.7 on - both shapes are parsed.",
+      "repo": "https://github.com/mengge237/dsh-model-priority",
+      "category": "tools",
+      "subcategory": "model"
     }
   ]
 }

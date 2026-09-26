@@ -3,6 +3,23 @@ window.SKIN_MANIFEST = {
   "generated": "2026-09-26",
   "skins": [
     {
+      "id": "verdandi",
+      "name": "薇儿丹蒂 · 纯白圣誓",
+      "nameEn": "Verdandi · White Vow",
+      "author": "hjbztlbr",
+      "tagline": "深红守护导航，纯白承载誓约",
+      "description": "以《深空之眼》薇儿丹蒂与「纯白之誓」为灵感的 DSH Web UI 皮肤。深红负责导航与会话冠带，婚纱白负责阅读与编辑，柔金只作骑士纹章和交互刻线；覆盖侧栏、会话、输入卡、设置、详情及亮暗模式。v2 资产版由 v1 插件版逐字节移植：栅格美术落为 assets/ 文件，动态装饰走 hooks.mjs。",
+      "accent": "#8e2438",
+      "preview": {
+        "light": "assets/skins/verdandi/preview/light.jpg",
+        "dark": "assets/skins/verdandi/preview/dark.jpg"
+      },
+      "contributes": {
+        "stylesheet": "skin.css",
+        "patches": "patches.css"
+      }
+    },
+    {
       "id": "whale-song",
       "name": "鲸吟",
       "nameEn": "Whale Song",
@@ -748,6 +765,35 @@ window.SKIN_MANIFEST = {
             "type": "image",
             "src": "assets/skins/mid-autumn/assets/zq-bg.webp",
             "scrim": "linear-gradient(180deg, rgba(6,6,8,0.36) 0%, rgba(6,6,8,0.04) 20%, rgba(6,6,8,0.04) 58%, rgba(6,6,8,0.40) 100%), radial-gradient(58% 54% at 72% 54%, rgba(6,6,8,0.44) 0%, rgba(6,6,8,0) 82%), radial-gradient(92% 74% at 16% 4%, rgba(6,6,8,0.10) 0%, rgba(6,6,8,0) 62%)"
+          }
+        }
+      }
+    },
+    {
+      "id": "whale-fantasy",
+      "name": "鲸鱼娘 · 未至之境",
+      "nameEn": "Whale Girl · The Unreached",
+      "author": "stushansusu",
+      "tagline": "冷黑蓝 · 电光蓝 · 青色数据雨 · 赛博全息 HUD",
+      "description": "未至之境的一路：背景是作者给的赛博动画（蓝发少女的脸部与眼睛特写、眼里淌着代码、青色数据雨），配色全部从画面里量出来 —— 地面取那片夜 #05070D，结构线取暗部那一档冷蓝 #1E3A6B，品牌色取字标的电光蓝 #3A7BFF，强调色取眼睛与数据雨里的青 #39FFD1，正文取银白 #E8F1FF。语言是「悬浮在夜里的一块全息仪表盘」：面全是薄玻璃（背后永远是正在流动的画面），结构是 1px 冷蓝线，青色只给状态（当前行、聚焦中的输入卡、链接、选中文本），全屏唯一的实心是新会话那颗电光蓝按钮。**暗色专用**，左上角品牌行换成「鲸鱼娘 · 未至之境」。",
+      "accent": "#3A7BFF",
+      "preview": {
+        "light": "assets/skins/whale-fantasy/preview/light.jpg",
+        "dark": "assets/skins/whale-fantasy/preview/dark.jpg"
+      },
+      "contributes": {
+        "stylesheet": "skin.css",
+        "patches": "patches.css",
+        "backgroundMedia": {
+          "light": {
+            "type": "video",
+            "src": "assets/skins/whale-fantasy/assets/whale-fantasy-loop.mp4",
+            "scrim": "linear-gradient(180deg, rgba(5,7,13,0) 0%, rgba(5,7,13,0) 86%, rgba(5,7,13,0.16) 96%, rgba(5,7,13,0.22) 100%)"
+          },
+          "dark": {
+            "type": "video",
+            "src": "assets/skins/whale-fantasy/assets/whale-fantasy-loop.mp4",
+            "scrim": "linear-gradient(180deg, rgba(5,7,13,0) 0%, rgba(5,7,13,0) 86%, rgba(5,7,13,0.16) 96%, rgba(5,7,13,0.22) 100%)"
           }
         }
       }
