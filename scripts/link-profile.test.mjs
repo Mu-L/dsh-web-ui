@@ -10,7 +10,7 @@ import assert from 'node:assert/strict'
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { decideLinkAction, bundlePatchChildNames, satellitePackages } from './link-profile.mjs'
+import { decideLinkAction, bundlePatchChildNames, satellitePackages, decideAggregateRelink } from './link-profile.mjs'
 
 const TARGET = '../../dsh-web-ui/packages/dsh-web-ui'
 
@@ -75,6 +75,58 @@ test('satellite packages: only family-scoped satellites/* with a readable manife
       'dsh-pet',
     ])
     assert.equal(satellitePackages(join(root, 'absent')).length, 0)
+  } finally {
+    rmSync(root, { recursive: true, force: true })
+  }
+})
+
+
+const STORE_LINK = '../../../../node_modules/.pnpm/@linxin666+dsh-client-ui-skin-center@0.4.2_react@18.3.1/node_modules/@linxin666/dsh-client-ui-skin-center'
+
+test('aggregate relink: replaces a pnpm-store symlink when the satellite is built and in range', () => {
+  const root = mkdtempSync(join(tmpdir(), 'link-profile-relink-'))
+  try {
+    const satellite = join(root, 'satellites', 'dsh-skins')
+    mkdirSync(join(satellite, 'lib'), { recursive: true })
+    writeFileSync(join(satellite, 'package.json'), JSON.stringify({ name: '@linxin666/dsh-client-ui-skin-center', version: '0.4.2' }))
+    writeFileSync(join(satellite, 'lib', 'index.js'), 'export {}')
+    assert.equal(decideAggregateRelink('symlink', STORE_LINK, satellite, '^0.4.2'), 'replace')
+  } finally {
+    rmSync(root, { recursive: true, force: true })
+  }
+})
+
+test('aggregate relink: keeps a link that already points outside the store', () => {
+  assert.equal(decideAggregateRelink('symlink', '../../../satellites/dsh-skins', '/nonexistent', '^0.4.2'), 'keep')
+})
+
+test('aggregate relink: never touches a real file or directory', () => {
+  assert.equal(decideAggregateRelink('file', STORE_LINK, '/nonexistent', '^0.4.2'), 'skip-report')
+  assert.equal(decideAggregateRelink('dir', STORE_LINK, '/nonexistent', '^0.4.2'), 'skip-report')
+  assert.equal(decideAggregateRelink('missing', null, '/nonexistent', '^0.4.2'), 'skip-report')
+})
+
+test('aggregate relink: skips a satellite without a built lib', () => {
+  const root = mkdtempSync(join(tmpdir(), 'link-profile-relink-'))
+  try {
+    const satellite = join(root, 'satellites', 'dsh-skins')
+    mkdirSync(satellite, { recursive: true })
+    writeFileSync(join(satellite, 'package.json'), JSON.stringify({ name: '@linxin666/dsh-client-ui-skin-center', version: '0.4.2' }))
+    assert.equal(decideAggregateRelink('symlink', STORE_LINK, satellite, '^0.4.2'), 'skip-report')
+  } finally {
+    rmSync(root, { recursive: true, force: true })
+  }
+})
+
+test('aggregate relink: skips a satellite outside the declared range', () => {
+  const root = mkdtempSync(join(tmpdir(), 'link-profile-relink-'))
+  try {
+    const satellite = join(root, 'satellites', 'dsh-skins')
+    mkdirSync(join(satellite, 'lib'), { recursive: true })
+    writeFileSync(join(satellite, 'package.json'), JSON.stringify({ name: '@linxin666/dsh-client-ui-skin-center', version: '0.5.0' }))
+    writeFileSync(join(satellite, 'lib', 'index.js'), 'export {}')
+    assert.equal(decideAggregateRelink('symlink', STORE_LINK, satellite, '^0.4.2'), 'skip-report')
+    assert.equal(decideAggregateRelink('symlink', STORE_LINK, satellite, '^0.4.2 || ^0.5.0'), 'replace')
   } finally {
     rmSync(root, { recursive: true, force: true })
   }

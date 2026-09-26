@@ -92,6 +92,13 @@ pnpm typecheck && pnpm test && pnpm docs:check   # 提交前必过
 `pnpm market:fetch` 得到 `HTTP 404`——移动钉扎的那一次运行成功，掩盖了后续所有运行的失败。
 卫星仓内改动的验收与门禁在该仓自己的 CI 跑（见该仓 `AGENTS.md`）。
 
+**桌面宿主读到的是哪份卫星副本**：全家桶聚合包按 semver 声明这四个卫星包
+（`^0.4.2`），`pnpm install` 因此把聚合包 `node_modules/@linxin666` 下的符号链接指到
+pnpm store 的已发布 tarball。桌面宿主解析聚合 patch 行贡献的外部行时从聚合包自身的
+node_modules 出发——仅提交卫星仓并重启，GUI 加载的仍是发布版旧代码。在本地检出开发
+卫星内容后重跑 `node scripts/link-profile.mjs`：它会把这些 store 链接改指到本地卫星
+（仅当该卫星已构建 `lib/` 且版本满足声明的范围），随后重启 DSH 生效。
+
 ## 提交规范
 
 提交信息格式 `type(scope): subject`，type 用 `feat` / `fix` / `chore` /
