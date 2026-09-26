@@ -75,10 +75,13 @@ issue 与提交落地过两次——rc.6 `centerCol` 回退（#243 / #107）、�
 - 新增家族面板 = 一次 `sidebar.panellist` 注册 + 一次 keyed `main` 注册；占位、
   行盒与轨道白得，也没有家族表需要同步。
 - 持有活跃资源的面板必须给资源比页面更长的生命周期；Host 侧会话表是参考实现。
-- 皮肤里针对注入行的钩子（`data-dsh-ssh-entry`、
-  `data-dsh-skill-explorer-entry`、`data-dsh-taskboard-entry`）不再匹配任何东西：
-  这些行现在归 shell。面板锚点（`data-dsh-ssh-view`、
-  `data-dsh-skill-explorer-view`、`data-dsh-taskboard-view`）与
-  `data-dsh-plugin` 标记保留在页面包装层，因此面板级皮肤规则照常生效。
+- 皮肤里针对注入行的钩子已在 dsh-skins 仓重锚（其 `main` 上的提交 `a342b8e`）：
+  这些行现在归 shell。失效的 `[data-dsh-*-entry]` 行属性已删除；契约把
+  `sidebar-entry` 这个 part 重新定义为**插件注册的侧栏面板行**，皮肤中心的兼容
+  适配器按「CSS-module 行类 + 插件自己输出的字形身份（`data-dsh-panel-entry`）」
+  把它补打到 shell 的 `sidebar.panellist` 行上。以该 part 为锚的已发布皮肤因此
+  照常生效；面板锚点（`data-dsh-ssh-view`、`data-dsh-skill-explorer-view`、
+  `data-dsh-taskboard-view`）与 `data-dsh-plugin` 标记仍留在页面包装层，面板级
+  皮肤规则同样照常生效。
 - dsh-ssh 是唯一还保留 DOM 层扩展路径的包（`body-mutations` 仍与聚合 shell 和
   usage 卡共享）；该路径服务于家族之外的面板，与占位无关。

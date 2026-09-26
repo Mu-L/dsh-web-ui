@@ -102,12 +102,18 @@ pattern:
   there is no family table to keep in step.
 - A panel that owns live resources must give them a lifetime longer than its
   page. The host-side session registry is the reference implementation.
-- The skins' injected-row hooks (`data-dsh-ssh-entry`,
-  `data-dsh-skill-explorer-entry`, `data-dsh-taskboard-entry`) no longer match
-  anything: those rows are the shell's now. The panel anchors
-  (`data-dsh-ssh-view`, `data-dsh-skill-explorer-view`,
-  `data-dsh-taskboard-view`) and the `data-dsh-plugin` markers stay on the
-  page wrappers, so panel-level skin rules keep working.
+- The skins' injected-row hooks were re-anchored in the dsh-skins repository
+  (commit `a342b8e` on its `main`): those rows are the shell's now. The retired
+  `[data-dsh-*-entry]` row attributes are gone; in their place the contract
+  re-defines the `sidebar-entry` part as *the plugin-registered panel row*, and
+  skin-center's compat adapter stamps that part on the shell's
+  `sidebar.panellist` rows, which it recognises through the css-module row class
+  plus the glyph identity the registering plugin itself outputs
+  (`data-dsh-panel-entry`). Every shipped skin keyed on the part therefore keeps
+  working, and the panel anchors (`data-dsh-ssh-view`,
+  `data-dsh-skill-explorer-view`, `data-dsh-taskboard-view`) plus the
+  `data-dsh-plugin` markers stay on the page wrappers, so panel-level skin rules
+  keep working too.
 - dsh-ssh is now the only package that keeps a DOM-level extension path at all
   (`body-mutations` is still shared with the aggregate shell and the usage
   card); it exists for surfaces outside the family, not for panel occupancy.

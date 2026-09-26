@@ -35,6 +35,6 @@ Status: implemented
 ## Consequences
 
 - 看板的行与页面都是 shell 自己的；未来 shell 改样式无需本包同步改动，折叠栏与选中态也免费获得。
-- `[data-dsh-taskboard-entry]` 不再存在，`html[data-dsh-taskboard-active]` 不再控制可见性。dsh-skins 仓的语义属性契约与 wallpaper-exclusive 皮肤补丁引用了 `[data-dsh-taskboard-view]`（仍在）与 `[data-dsh-taskboard-entry]`／该选中属性（已消失）；那些文件归该仓所有，更新它们是跨仓后续项。dsh-ssh 的同步副本 `panel-mount-core.ts` 仍把 `data-dsh-taskboard-active` 作为 `siblingActiveAttribute`，现已失效——无害（该属性永不被设置），可在 ssh 自身迁到原生座位时一并清理。
+- `[data-dsh-taskboard-entry]` 不再存在，`html[data-dsh-taskboard-active]` 不再控制可见性。ssh 与看板共享的接管核心（`panel-mount-core.ts`、`sidebar-entry-core.ts`）也已删除，因此不再有同步副本继续携带失效的 `siblingActiveAttribute`。dsh-skins 仓已在后续提交（其 `main` 上的 `a342b8e`）重锚行钩子；机制见[家族笔记](2026-09-23-center-column-panel-family.zh.md)。
 - 看板需要布局在场才能渲染页面：没有 `ui-layout` 行的部署仍保留看板宿主/agent 能力，但没有可渲染它的面板。
 - 计划任务在武装时刻触发，而不是最多晚 30 秒；睡过或恢复的宿主跳过错过的出现而非重放（语义未变，现由容忍窗口落实）。
