@@ -21,12 +21,11 @@ import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-ui-slots'
 import { SshApi } from './api.ts'
 import { en, zh, type SshKey } from './locales.ts'
-import { mountPanel } from './mount.tsx'
-import { PanelController } from './panel/controller.ts'
+import { registerSshPanel } from './native-panel.tsx'
+import { PanelController, SSH_PANEL_ID } from './panel/controller.ts'
 import type { TerminalFontSource } from './panel/helpers.ts'
 import { setRuntimeTranslate } from './panel/helpers.ts'
 import { bindSettingsReader } from './settings-binding.ts'
-import { mountSidebarEntry } from './sidebar-entry.ts'
 import { reportDailyHeartbeat } from './telemetry.ts'
 
 /** Locale namespace this plugin owns. */
@@ -90,7 +89,20 @@ export function apply(ctx: ClientContext): void {
   // follow the Language setting without a reload.
   try { setRuntimeTranslate(ctx.locale.bind(NS)) } catch { /* locale missing: document-language fallback stays */ }
 
-  const controller = new PanelController()
+  // Panel navigation belongs to the layout service: the panel asks it to
+  // select its own panel id (or the conversation) instead of taking over the
+  // center column at the DOM level. The lookup stays lazy so a selection
+  // issued before the service settles still lands once it does, and the face
+  // throws by contract before the layout root entry mounts, which the
+  // controller tolerates.
+  const controller = new PanelController({
+    panel: {
+      select: panelId => {
+        const layout = ctx.get('layout') as { selectPanel?: (id: string | null) => void } | undefined
+        layout?.selectPanel?.(panelId)
+      },
+    },
+  })
   const api = new SshApi()
   // Live terminal-font preference (issue #577): the field lives in this
   // plugin's own profile entry, whose settings page the Host generates from
@@ -107,11 +119,21 @@ export function apply(ctx: ClientContext): void {
   ctx.effect(() => () => { settings.dispose() }, 'dsh-ssh: settings binding')
   const disposers: Array<() => void> = []
   try {
-    disposers.push(mountSidebarEntry(controller, ctx.locale))
-    disposers.push(mountPanel(controller, api, terminalFont, ctx.locale))
+    disposers.push(registerSshPanel(ctx, controller, api, terminalFont))
+    // The layout's panel selection is reconciled back into the controller, so
+    // the panel follows the user clicking another panel row.
+    const layoutFace = ctx.get('layout') as { panelInfo?: { subscribe(listener: () => void): () => void; getSnapshot(): { activePanelId: unknown } } } | undefined
+    if (layoutFace?.panelInfo !== undefined) {
+      const sync = (): void => {
+        const active = layoutFace.panelInfo!.getSnapshot().activePanelId
+        controller.syncPanelSelection(active === SSH_PANEL_ID ? SSH_PANEL_ID : null)
+      }
+      sync()
+      disposers.push(layoutFace.panelInfo.subscribe(sync))
+    }
   } catch (error) {
-    // DOM failures degrade the panel, never the GUI.
-    console.warn('[dsh-ssh] mount failed:', error)
+    // Registration failures degrade the panel, never the GUI.
+    console.warn('[dsh-ssh] panel registration failed:', error)
   }
   ctx.effect(() => () => {
     for (const dispose of disposers.splice(0)) dispose()

@@ -68,7 +68,8 @@ describe('host terminal sessions', () => {
     const first = fakeSocket()
     await registry.open(first.socket, 'web', { cols: 80, rows: 24 })
     const id = sessionIdOf(first.sent)
-    expect(id).toBeTruthy()
+    // The id is the host's reattach handle: 9 random bytes rendered as hex.
+    expect(id).toMatch(/^[0-9a-f]{18}$/)
     expect(first.sent.some(frame => frame.type === 'ready')).toBe(true)
 
     // When the remote prints and the view detaches

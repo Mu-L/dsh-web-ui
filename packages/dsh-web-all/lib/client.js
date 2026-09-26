@@ -8866,7 +8866,7 @@ window.__ModuleLoader__.load({
 		//#endregion
 		//#region ../dsh-task-board/src/client/native-panel.tsx
 		/** Row order among the shell's global panel rows (Plugins is 0, Schedule 10). */
-		const PANEL_ORDER$1 = 20;
+		const PANEL_ORDER$2 = 20;
 		/**
 		* The sidebar row glyph the shell asks for at its own size and active state.
 		* The shell owns the button, label, tooltip and rail geometry; this component
@@ -8912,63 +8912,6 @@ window.__ModuleLoader__.load({
 			});
 		}
 		/**
-		* The family's single-occupant center-column protocol.
-		*
-		* The board is the one family member that no longer takes the column over at
-		* the DOM level, but dsh-ssh and the skill center still do: while either
-		* panel's `html[data-dsh-*-active]` attribute is set, its stylesheet hides
-		* every other child of the center column, including this board's page. The
-		* layout knows nothing about those two (they are not layout panels), so it
-		* cannot deselect the board for us; the board has to hand the column back
-		* explicitly. The event and the detail values are the shared contract owned by
-		* `shared/client/panel-mount-core.ts`, so the board participates in it rather
-		* than inventing a second mechanism.
-		*/
-		const PANEL_ACTIVATE_EVENT$1 = "dsh-panel-activate";
-		/** This panel's name in the family protocol. */
-		const PANEL_NAME$1 = "taskboard";
-		/**
-		* The family panels whose activation closes the board, because each one takes
-		* the column over at the DOM level and would otherwise hide this board's page
-		* while its sidebar row still looks selected. These are exactly the
-		* DOM-takeover rows of `PANEL_FAMILY` in `shared/client/panel-mount-core.ts`;
-		* that table is the single source of occupancy truth for panels that mount
-		* through the core, and the board cannot import it (browser bundles may not
-		* value-import across plugins, and the board ships no copy of the core since
-		* it left the takeover). Keep this list in step when a family panel joins or
-		* leaves the DOM takeover.
-		*/
-		const TAKEOVER_PANEL_NAMES$1 = ["ssh", "skill-explorer"];
-		/**
-		* Keep the board mutually exclusive with the DOM-takeover family panels.
-		*
-		* The board contributes the column through the layout, so selecting it makes
-		* the shell render its page; a takeover panel needs to be told to let go, or
-		* its stylesheet keeps covering the page. The reverse direction is the same:
-		* ssh or the skill center taking the column asks the board to hand it back to
-		* the conversation, which is what the layout renders underneath them.
-		* @param controller - the board controller whose open state drives the protocol.
-		* @returns disposer removing the listener and the subscription.
-		*/
-		function coordinateWithFamilyPanels(controller) {
-			let open = controller.getSnapshot().boardOpen;
-			const onActivate = (event) => {
-				if (!TAKEOVER_PANEL_NAMES$1.includes(event.detail)) return;
-				if (controller.getSnapshot().boardOpen) controller.closeBoard();
-			};
-			const unsubscribe = controller.subscribe(() => {
-				const next = controller.getSnapshot().boardOpen;
-				if (next === open) return;
-				open = next;
-				if (next) document.dispatchEvent(new CustomEvent(PANEL_ACTIVATE_EVENT$1, { detail: PANEL_NAME$1 }));
-			});
-			document.addEventListener(PANEL_ACTIVATE_EVENT$1, onActivate);
-			return () => {
-				document.removeEventListener(PANEL_ACTIVATE_EVENT$1, onActivate);
-				unsubscribe();
-			};
-		}
-		/**
 		* Register the board's sidebar row and center-column page.
 		*
 		* Both seats are declared by shell plugins this package does not depend on at
@@ -8980,13 +8923,12 @@ window.__ModuleLoader__.load({
 		* @returns disposer releasing both registrations.
 		*/
 		function registerTaskBoardPanel(ctx, controller) {
-			const releaseCoordination = coordinateWithFamilyPanels(controller);
 			const slots = ctx.slots;
 			const disposers = [];
 			disposers.push(slots.inject("sidebar.panellist", () => slots.register({
 				name: "sidebar.panellist",
 				id: TASK_BOARD_PANEL_ID,
-				order: PANEL_ORDER$1,
+				order: PANEL_ORDER$2,
 				label: () => t$4("entry.label")
 			}, TaskBoardPanelIcon)));
 			disposers.push(slots.inject("main", () => slots.register({
@@ -8995,7 +8937,6 @@ window.__ModuleLoader__.load({
 				inject: () => ({ controller })
 			}, TaskBoardPanel)));
 			return () => {
-				releaseCoordination();
 				for (const dispose of disposers.splice(0)) dispose();
 			};
 		}
@@ -19597,39 +19538,77 @@ window.__ModuleLoader__.load({
 					bytes: received
 				};
 			}
-			/** Open a WebSocket terminal session. */
+			/**
+			* Open a new host terminal session for the alias.
+			* @param alias - the configured host alias.
+			* @param cols - initial PTY width.
+			* @param rows - initial PTY height.
+			* @returns the live connection; its ready callback carries the session id
+			*   {@link attachTerminal} uses after a view detach.
+			*/
 			openTerminal(alias, cols, rows) {
-				const url = (window.location.protocol === "https:" ? "wss" : "ws") + "://" + window.location.host + SSH_API.terminal + query({
+				return this.terminalSocket(query({
 					alias,
 					cols,
 					rows
-				});
+				}));
+			}
+			/**
+			* Reattach to a host-side session that outlived its view (a panel switch, a
+			* page navigation). The host replays its scrollback before the ready frame.
+			* @param sessionId - the id the previous connection reported on ready.
+			* @param cols - the view's current width.
+			* @param rows - the view's current height.
+			*/
+			attachTerminal(sessionId, cols, rows) {
+				return this.terminalSocket(query({
+					session: sessionId,
+					cols,
+					rows
+				}));
+			}
+			/** One terminal socket over either an alias (open) or a session id (attach). */
+			terminalSocket(search) {
+				const url = (window.location.protocol === "https:" ? "wss" : "ws") + "://" + window.location.host + SSH_API.terminal + search;
 				const socket = new WebSocket(url);
+				let leaving = false;
+				const sendFrame = (frame) => {
+					if (socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify(frame));
+				};
 				const connection = {
 					onReady: void 0,
 					onOutput: void 0,
 					onExit: void 0,
 					onAuthPrompt: void 0,
 					send: (data) => {
-						if (socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify({
+						sendFrame({
 							type: "input",
 							data
-						}));
+						});
 					},
 					resize: (cols, rows) => {
-						if (socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify({
+						sendFrame({
 							type: "resize",
 							cols,
 							rows
-						}));
+						});
 					},
 					sendAuthResponse: (responses) => {
-						if (socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify({
+						sendFrame({
 							type: "auth_response",
 							responses
-						}));
+						});
+					},
+					detach: () => {
+						leaving = true;
+						sendFrame({ type: "detach" });
+						try {
+							socket.close();
+						} catch {}
 					},
 					close: () => {
+						leaving = true;
+						sendFrame({ type: "close" });
 						try {
 							socket.close();
 						} catch {}
@@ -19642,23 +19621,127 @@ window.__ModuleLoader__.load({
 					} catch {
 						return;
 					}
-					if (frame.type === "ready") connection.onReady?.();
+					if (frame.type === "ready") connection.onReady?.(frame.sessionId, frame.alias);
 					else if (frame.type === "output") connection.onOutput?.(frame.data);
 					else if (frame.type === "exit") connection.onExit?.(frame.code, frame.error);
 					else if (frame.type === "auth_prompt") connection.onAuthPrompt?.(frame.name, frame.instructions, frame.prompts);
 				};
 				socket.onclose = () => {
-					connection.onExit?.(null, "connection closed");
+					if (!leaving) connection.onExit?.(null, "connection closed");
 				};
 				socket.onerror = () => {
-					connection.onExit?.(null, "connection error");
+					if (!leaving) connection.onExit?.(null, "connection error");
 				};
 				return connection;
 			}
 		};
+		/** The panel state owner the sidebar row and the view both read. */
+		var PanelController$1 = class {
+			deps;
+			panelOpen = false;
+			activeTab = "hosts";
+			connectRequest = null;
+			terminalSessionId;
+			listeners = /* @__PURE__ */ new Set();
+			/** Cached so getSnapshot is referentially stable between changes. */
+			snapshot = {
+				panelOpen: false,
+				activeTab: "hosts",
+				connectRequest: null,
+				terminalSessionId: void 0
+			};
+			constructor(deps = {}) {
+				this.deps = deps;
+			}
+			getSnapshot() {
+				return this.snapshot;
+			}
+			subscribe(fn) {
+				this.listeners.add(fn);
+				return () => {
+					this.listeners.delete(fn);
+				};
+			}
+			/**
+			* Show the panel. The layout owns which panel the column renders, so the
+			* state flip and the selection travel together; the selection is requested
+			* after the snapshot flips, so a subscriber never observes "open" while the
+			* shell still shows the conversation.
+			*/
+			open() {
+				if (this.panelOpen) return;
+				this.panelOpen = true;
+				this.commit();
+				this.selectPanel("ssh");
+			}
+			/** Return the column to the conversation, asking the layout explicitly. */
+			close() {
+				if (!this.panelOpen) return;
+				this.panelOpen = false;
+				this.commit();
+				this.selectPanel(null);
+			}
+			toggle() {
+				if (this.panelOpen) this.close();
+				else this.open();
+			}
+			/**
+			* Reflect a selection made outside this controller (the user clicked another
+			* sidebar row, or the layout dropped the panel id).
+			* @param panelId - the layout's current panel id, or null for the conversation.
+			*/
+			syncPanelSelection(panelId) {
+				const open = panelId === "ssh";
+				if (open === this.panelOpen) return;
+				this.panelOpen = open;
+				this.commit();
+			}
+			/** Switch tabs, keeping every other piece of view state. */
+			setActiveTab(tab) {
+				if (this.activeTab === tab) return;
+				this.activeTab = tab;
+				this.commit();
+			}
+			/** Hand the terminal tab a host to connect to (hosts-tab "connect" action). */
+			requestConnect(alias) {
+				this.connectRequest = {
+					alias,
+					nonce: Date.now()
+				};
+				this.activeTab = "terminal";
+				this.commit();
+			}
+			/** Record the host-side session so a later page mount can reattach. */
+			setTerminalSession(sessionId) {
+				if (this.terminalSessionId === sessionId) return;
+				this.terminalSessionId = sessionId;
+				this.commit();
+			}
+			/** Forget the session (it exited, or the user disconnected). */
+			clearTerminalSession() {
+				if (this.terminalSessionId === void 0) return;
+				this.terminalSessionId = void 0;
+				this.commit();
+			}
+			commit() {
+				this.snapshot = {
+					panelOpen: this.panelOpen,
+					activeTab: this.activeTab,
+					connectRequest: this.connectRequest,
+					terminalSessionId: this.terminalSessionId
+				};
+				for (const fn of [...this.listeners]) fn();
+			}
+			/** Ask the layout to select a panel; a shell without the face is a no-op. */
+			selectPanel(panelId) {
+				try {
+					this.deps.panel?.select(panelId);
+				} catch {}
+			}
+		};
 		//#endregion
 		//#region \0dsh-css:packages/dsh-ssh/src/client/panel/panel.module.css.mjs
-		const css$6 = "[data-pane=conversation],[class*=centerCol]{position:relative}[data-dsh-ssh-view]{z-index:60;background:var(--dsw-alias-bg-base);display:none;position:absolute;inset:0}html[data-dsh-ssh-active]:not([data-dsh-taskboard-active]) [data-dsh-ssh-view]{display:block}html[data-dsh-ssh-active]:not([data-dsh-taskboard-active]) [data-pane=conversation]>:not([data-dsh-ssh-view]),html[data-dsh-ssh-active]:not([data-dsh-taskboard-active]) [class*=centerCol]>:not([data-dsh-ssh-view]){display:none!important}.mL8Uca_entry{box-sizing:border-box;min-height:36px;color:var(--dsw-alias-label-primary);cursor:pointer;font:inherit;text-align:left;white-space:nowrap;background:0 0;border:none;border-radius:12px;align-items:center;gap:8px;margin:0 2px;padding:7px 8px;font-size:14px;line-height:22px;display:flex}.mL8Uca_entry:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.mL8Uca_entry[data-active]{background:var(--dsw-alias-interactive-bg-active);color:var(--dsw-alias-label-primary);font-weight:600}.mL8Uca_entryIcon{flex:none;justify-content:center;align-items:center;width:16px;height:16px;display:inline-flex}.mL8Uca_entryIcon svg{width:16px;height:16px;display:block}.mL8Uca_entryLabel{text-overflow:ellipsis;overflow:hidden}[data-dsh-frame][data-sidebar-collapsed] .mL8Uca_entry,[data-sidebar-collapsed] .mL8Uca_entry{border-radius:12px;justify-content:center;width:36px;min-height:36px;margin:0 auto 12px;padding:0}[data-dsh-frame][data-sidebar-collapsed] .mL8Uca_entryIcon,[data-sidebar-collapsed] .mL8Uca_entryIcon,[data-dsh-frame][data-sidebar-collapsed] .mL8Uca_entryIcon svg,[data-sidebar-collapsed] .mL8Uca_entryIcon svg{width:18px;height:18px}[data-dsh-frame][data-sidebar-collapsed] .mL8Uca_entryLabel,[data-sidebar-collapsed] .mL8Uca_entryLabel{display:none}.mL8Uca_view{overflow:hidden}.mL8Uca_panel{background:var(--dsw-alias-bg-base);min-width:0;height:100%;min-height:0;color:var(--dsw-alias-label-primary);font-family:var(--dsw-font-family);flex-direction:column;gap:10px;padding:14px 16px 16px;display:flex}.mL8Uca_panelHeader{flex:none;align-items:center;gap:10px;display:flex}.mL8Uca_panelTitle{color:var(--dsw-alias-label-primary);white-space:nowrap;flex:1;margin:0;font-size:16px;font-weight:700}.mL8Uca_backButton{align-items:center;gap:4px;display:inline-flex}.mL8Uca_tabBar{border-bottom:1px solid var(--dsw-alias-border-l1);flex:none;gap:2px;display:flex}.mL8Uca_tab{color:var(--dsw-alias-label-secondary);cursor:pointer;white-space:nowrap;background:0 0;border:none;border-bottom:2px solid #0000;border-radius:6px 6px 0 0;padding:7px 14px;font-size:13px}.mL8Uca_tab:hover{color:var(--dsw-alias-label-primary);background:var(--dsw-alias-interactive-bg-hover)}.mL8Uca_tab[data-active]{color:var(--dsw-alias-label-primary);border-bottom-color:var(--dsw-alias-state-business-primary);font-weight:600}.mL8Uca_panelContent{flex-direction:column;flex:1;min-height:0;display:flex;overflow:hidden}.mL8Uca_tabBody{flex-direction:column;flex:1;gap:10px;min-height:0;display:flex;overflow-y:auto}.mL8Uca_fillBody{flex-direction:column;flex:1;gap:10px;min-height:0;display:flex;overflow:hidden}.mL8Uca_toolbar,.mL8Uca_controls{flex-wrap:wrap;flex:none;align-items:center;gap:8px;display:flex}.mL8Uca_controls .mL8Uca_input{flex:0 260px;min-width:150px}.mL8Uca_toolbarSpacer{flex:1}.mL8Uca_search{min-width:120px;color:var(--dsw-alias-label-primary);background:var(--dsw-specific-input-major);border:1px solid var(--dsw-alias-border-l2);border-radius:8px;outline:none;flex:0 260px;padding:6px 10px;font-size:13px}.mL8Uca_search::placeholder{color:var(--dsw-alias-label-tertiary)}.mL8Uca_groupBySelect{color:var(--dsw-alias-label-primary);background:var(--dsw-specific-input-major);border:1px solid var(--dsw-alias-border-l2);border-radius:8px;outline:none;padding:6px 8px;font-size:13px}.mL8Uca_groupSection+.mL8Uca_groupSection{border-top:1px solid var(--dsw-alias-border-l1)}.mL8Uca_groupHeader{background:var(--dsw-alias-bg-base,var(--dsw-specific-input-major));align-items:center;gap:8px;padding:4px 8px;display:flex;position:sticky;top:0}.mL8Uca_groupToggle{min-width:0;color:var(--dsw-alias-label-primary);cursor:pointer;text-align:left;background:0 0;border:none;border-radius:6px;flex:1;align-items:center;gap:6px;padding:4px 6px;font-size:12.5px;font-weight:500;display:flex}.mL8Uca_groupToggle:hover{background:var(--dsw-alias-interactive-bg-hover)}.mL8Uca_groupChevron{border-right:1.5px solid var(--dsw-alias-label-tertiary);border-bottom:1.5px solid var(--dsw-alias-label-tertiary);flex:none;width:7px;height:7px;margin-bottom:2px;transition:transform .12s;transform:rotate(45deg)}.mL8Uca_groupChevron[data-collapsed]{margin-bottom:0;transform:rotate(-45deg)}.mL8Uca_groupName{text-overflow:ellipsis;white-space:nowrap;overflow:hidden}.mL8Uca_groupCount{color:var(--dsw-alias-label-tertiary);flex:none;font-weight:400}.mL8Uca_tableWrap{border:1px solid var(--dsw-alias-border-l1);border-radius:10px;flex:1;min-height:0;overflow:auto}.mL8Uca_table{border-collapse:collapse;width:100%;font-size:12.5px}.mL8Uca_table th{z-index:1;text-align:left;background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-secondary);border-bottom:1px solid var(--dsw-alias-border-l1);white-space:nowrap;padding:8px 10px;font-weight:600;position:sticky;top:0}.mL8Uca_table td{border-bottom:1px solid var(--dsw-alias-separator-primary);vertical-align:top;padding:7px 10px}.mL8Uca_table tbody tr:last-child td{border-bottom:none}.mL8Uca_table tbody tr:hover td{background:var(--dsw-alias-interactive-bg-hover)}.mL8Uca_mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}.mL8Uca_cellMuted{color:var(--dsw-alias-label-tertiary)}.mL8Uca_actions{white-space:nowrap;align-items:center;gap:8px;display:flex}.mL8Uca_inlineTest{color:var(--dsw-alias-label-secondary);align-items:center;gap:6px;font-size:11.5px;display:inline-flex}.mL8Uca_inlineTest[data-status=ok]{color:var(--dsw-alias-state-success-primary)}.mL8Uca_inlineTest[data-status=fail]{color:var(--dsw-alias-state-error-primary)}.mL8Uca_badge{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);white-space:nowrap;border-radius:999px;padding:1px 8px;font-size:11px;line-height:1.6;display:inline-block}.mL8Uca_badge[data-kind=key]{color:var(--dsw-alias-state-business-primary);border-color:var(--dsw-alias-state-business-primary)}.mL8Uca_badge[data-kind=password]{color:var(--dsw-alias-state-warn-primary);border-color:var(--dsw-alias-state-warn-primary)}.mL8Uca_badge[data-kind=agent]{color:var(--dsw-alias-state-success-primary);border-color:var(--dsw-alias-state-success-primary)}.mL8Uca_badge[data-kind=proxy]{color:var(--dsw-alias-state-business-primary);border-color:var(--dsw-alias-state-business-primary);margin-left:6px}.mL8Uca_badge[data-status=ok]{color:var(--dsw-alias-state-success-primary);border-color:var(--dsw-alias-state-success-primary)}.mL8Uca_badge[data-status=fail]{color:var(--dsw-alias-state-error-primary);border-color:var(--dsw-alias-state-error-primary)}.mL8Uca_badge[data-status=timeout]{color:var(--dsw-alias-state-warn-primary);border-color:var(--dsw-alias-state-warn-primary)}.mL8Uca_primaryButton{color:var(--dsw-alias-label-primary-foreground);background:var(--dsw-alias-button-info-fill);cursor:pointer;white-space:nowrap;border:none;border-radius:8px;padding:6px 14px;font-size:13px;font-weight:600}.mL8Uca_primaryButton:hover:not(:disabled){background:var(--dsw-alias-button-info-hover)}.mL8Uca_primaryButton:disabled{opacity:.5;cursor:default}.mL8Uca_ghostButton{color:var(--dsw-alias-label-primary);border:1px solid var(--dsw-alias-border-l2);cursor:pointer;white-space:nowrap;background:0 0;border-radius:8px;padding:5px 12px;font-size:12px}.mL8Uca_ghostButton:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}.mL8Uca_ghostButton:disabled{opacity:.45;cursor:default}.mL8Uca_iconButton{width:26px;height:26px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:6px;justify-content:center;align-items:center;padding:0;font-size:13px;display:inline-flex}.mL8Uca_iconButton:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.mL8Uca_linkButton{color:var(--dsw-alias-state-business-primary);cursor:pointer;white-space:nowrap;background:0 0;border:none;padding:0;font-size:12px}.mL8Uca_linkButton:hover:not(:disabled){text-decoration:underline}.mL8Uca_linkButton:disabled{opacity:.45;cursor:default}.mL8Uca_linkButton[data-danger]{color:var(--dsw-alias-state-error-primary)}.mL8Uca_spinner{border:2px solid var(--dsw-alias-state-business-primary);vertical-align:-1px;border-top-color:#0000;border-radius:50%;flex:none;width:11px;height:11px;animation:.8s linear infinite mL8Uca_dshSshSpin;display:inline-block}@keyframes mL8Uca_dshSshSpin{to{transform:rotate(360deg)}}.mL8Uca_banner{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);overflow-wrap:anywhere;border-radius:8px;padding:8px 12px;font-size:12.5px;line-height:1.5}.mL8Uca_importSkips{border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-2);border-radius:8px;flex-direction:column;gap:4px;margin:6px 0 0;padding:8px 12px;list-style:none;display:flex}.mL8Uca_importSkipRow{justify-content:space-between;align-items:baseline;gap:12px;font-size:12px;display:flex}.mL8Uca_banner[data-kind=ok]{color:var(--dsw-alias-state-success-primary);border-color:var(--dsw-alias-state-success-primary)}.mL8Uca_banner[data-kind=error]{color:var(--dsw-alias-state-error-primary);border-color:var(--dsw-alias-state-error-primary)}.mL8Uca_banner[data-kind=info]{color:var(--dsw-alias-state-business-primary);border-color:var(--dsw-alias-state-business-primary)}.mL8Uca_empty,.mL8Uca_loading{text-align:center;color:var(--dsw-alias-label-tertiary);padding:28px 12px;font-size:12.5px}.mL8Uca_modalBackdrop{z-index:40;background:var(--dsw-alias-bg-mask-1);justify-content:center;align-items:center;display:flex;position:fixed;inset:0}.mL8Uca_modal{background:var(--dsw-alias-bg-base);border:1px solid var(--dsw-alias-border-l2);width:min(560px,100vw - 48px);max-height:calc(100vh - 96px);box-shadow:var(--dsw-shadow-lv3);color:var(--dsw-alias-label-primary);border-radius:14px;flex-direction:column;gap:12px;padding:18px;display:flex;overflow-y:auto}.mL8Uca_modalTitle{margin:0;font-size:15px;font-weight:700}.mL8Uca_modalFooter{justify-content:flex-end;gap:10px;margin-top:4px;display:flex}.mL8Uca_formError{color:var(--dsw-alias-state-error-primary);margin:0;font-size:12px}.mL8Uca_hint{color:var(--dsw-alias-label-tertiary);font-size:11.5px}.mL8Uca_field{flex-direction:column;gap:5px;display:flex}.mL8Uca_fieldLabel{color:var(--dsw-alias-label-secondary);font-size:12px;font-weight:600}.mL8Uca_input{color:var(--dsw-alias-label-primary);background:var(--dsw-specific-input-major);border:1px solid var(--dsw-alias-border-l2);resize:vertical;border-radius:8px;outline:none;padding:7px 10px;font-family:inherit;font-size:13px}.mL8Uca_input:focus{border-color:var(--dsw-alias-state-business-primary)}.mL8Uca_input::placeholder{color:var(--dsw-alias-label-tertiary)}.mL8Uca_input:disabled{opacity:.55}.mL8Uca_formRow{grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px 12px;display:grid}.mL8Uca_radioRow{align-items:center;gap:16px;display:flex}.mL8Uca_radioLabel{color:var(--dsw-alias-label-primary);cursor:pointer;align-items:center;gap:6px;font-size:13px;display:inline-flex}.mL8Uca_termBody{flex-direction:column;flex:1;gap:8px;min-height:0;display:flex;overflow:hidden}.mL8Uca_termWrap{border:1px solid var(--dsw-alias-border-l1);background:#0b0e14;border-radius:10px;flex:1;min-height:0;position:relative;overflow:hidden}.mL8Uca_termContainer{position:absolute;inset:8px 10px}.mL8Uca_termPlaceholder{z-index:2;text-align:center;color:var(--dsw-alias-label-tertiary);background:var(--dsw-alias-bg-base);justify-content:center;align-items:center;padding:0 24px;font-size:12.5px;display:flex;position:absolute;inset:0}.mL8Uca_hiddenFile{display:none}.mL8Uca_browsePanel{border:1px solid var(--dsw-alias-border-l1);border-radius:10px;flex-direction:column;flex:none;display:flex;overflow:hidden}.mL8Uca_browseHeader{background:var(--dsw-alias-bg-layer-2);border-bottom:1px solid var(--dsw-alias-border-l1);align-items:center;gap:8px;padding:8px 10px;display:flex}.mL8Uca_browsePath{text-overflow:ellipsis;white-space:nowrap;min-width:0;color:var(--dsw-alias-label-secondary);flex:1;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;overflow:hidden}.mL8Uca_browseList{max-height:240px;overflow-y:auto}.mL8Uca_dirRow{text-align:left;width:100%;font:inherit;color:var(--dsw-alias-label-primary);border:none;border-bottom:1px solid var(--dsw-alias-separator-primary);cursor:pointer;background:0 0;grid-template-columns:minmax(0,1fr) auto auto;gap:12px;padding:5px 10px;font-size:12.5px;display:grid}.mL8Uca_dirRow:hover{background:var(--dsw-alias-interactive-bg-hover)}.mL8Uca_dirRow[data-type=dir] .mL8Uca_dirName{color:var(--dsw-alias-state-business-primary)}.mL8Uca_dirRow[data-up]{color:var(--dsw-alias-label-secondary)}.mL8Uca_dirName{text-overflow:ellipsis;white-space:nowrap;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow:hidden}.mL8Uca_dirType{color:var(--dsw-alias-label-tertiary);white-space:nowrap}.mL8Uca_dirSize{color:var(--dsw-alias-label-tertiary);white-space:nowrap;text-align:right}.mL8Uca_transferBlock{flex-direction:column;flex:none;gap:6px;display:flex}.mL8Uca_progressMeta{color:var(--dsw-alias-label-secondary);flex-wrap:wrap;gap:12px;font-size:12px;display:flex}.mL8Uca_progressTrack{background:var(--dsw-alias-interactive-bg-hover);border-radius:999px;height:8px;overflow:hidden}.mL8Uca_progressBar{background:var(--dsw-alias-state-business-primary);border-radius:999px;height:100%;transition:width .12s linear}.mL8Uca_tunnelList{flex-direction:column;flex:none;gap:8px;display:flex}.mL8Uca_tunnelRow{background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2);border-radius:10px;align-items:center;gap:10px;padding:8px 12px;display:flex}.mL8Uca_tunnelRow[data-state=forwarding]{border-color:var(--dsw-alias-state-success-primary)}.mL8Uca_tunnelRow[data-state=connecting]{border-color:var(--dsw-alias-state-warn-primary)}.mL8Uca_tunnelRow[data-state=failed]{border-color:var(--dsw-alias-state-error-primary)}.mL8Uca_tunnelLabel{text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;overflow:hidden}.mL8Uca_formCard{background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l1);border-radius:10px;flex-direction:column;flex:none;gap:10px;padding:12px;display:flex}.mL8Uca_clusterForm{flex-direction:column;flex:none;gap:8px;display:flex}.mL8Uca_clusterFilters{grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;display:grid}.mL8Uca_commandInput{min-height:96px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}.mL8Uca_cellDetails summary{cursor:pointer;color:var(--dsw-alias-label-secondary);font-size:12px}.mL8Uca_cellPre{background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2);white-space:pre-wrap;word-break:break-all;border-radius:6px;max-height:180px;margin:4px 0 0;padding:6px 8px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11.5px;overflow:auto}";
+		const css$6 = ".mL8Uca_view{height:100%;min-height:0;overflow:hidden}.mL8Uca_panel{background:var(--dsw-alias-bg-base);min-width:0;height:100%;min-height:0;color:var(--dsw-alias-label-primary);font-family:var(--dsw-font-family);flex-direction:column;gap:10px;padding:14px 16px 16px;display:flex}.mL8Uca_panelHeader{flex:none;align-items:center;gap:10px;display:flex}.mL8Uca_panelTitle{color:var(--dsw-alias-label-primary);white-space:nowrap;flex:1;margin:0;font-size:16px;font-weight:700}.mL8Uca_backButton{align-items:center;gap:4px;display:inline-flex}.mL8Uca_tabBar{border-bottom:1px solid var(--dsw-alias-border-l1);flex:none;gap:2px;display:flex}.mL8Uca_tab{color:var(--dsw-alias-label-secondary);cursor:pointer;white-space:nowrap;background:0 0;border:none;border-bottom:2px solid #0000;border-radius:6px 6px 0 0;padding:7px 14px;font-size:13px}.mL8Uca_tab:hover{color:var(--dsw-alias-label-primary);background:var(--dsw-alias-interactive-bg-hover)}.mL8Uca_tab[data-active]{color:var(--dsw-alias-label-primary);border-bottom-color:var(--dsw-alias-state-business-primary);font-weight:600}.mL8Uca_panelContent{flex-direction:column;flex:1;min-height:0;display:flex;overflow:hidden}.mL8Uca_tabBody{flex-direction:column;flex:1;gap:10px;min-height:0;display:flex;overflow-y:auto}.mL8Uca_fillBody{flex-direction:column;flex:1;gap:10px;min-height:0;display:flex;overflow:hidden}.mL8Uca_toolbar,.mL8Uca_controls{flex-wrap:wrap;flex:none;align-items:center;gap:8px;display:flex}.mL8Uca_controls .mL8Uca_input{flex:0 260px;min-width:150px}.mL8Uca_toolbarSpacer{flex:1}.mL8Uca_search{min-width:120px;color:var(--dsw-alias-label-primary);background:var(--dsw-specific-input-major);border:1px solid var(--dsw-alias-border-l2);border-radius:8px;outline:none;flex:0 260px;padding:6px 10px;font-size:13px}.mL8Uca_search::placeholder{color:var(--dsw-alias-label-tertiary)}.mL8Uca_groupBySelect{color:var(--dsw-alias-label-primary);background:var(--dsw-specific-input-major);border:1px solid var(--dsw-alias-border-l2);border-radius:8px;outline:none;padding:6px 8px;font-size:13px}.mL8Uca_groupSection+.mL8Uca_groupSection{border-top:1px solid var(--dsw-alias-border-l1)}.mL8Uca_groupHeader{background:var(--dsw-alias-bg-base,var(--dsw-specific-input-major));align-items:center;gap:8px;padding:4px 8px;display:flex;position:sticky;top:0}.mL8Uca_groupToggle{min-width:0;color:var(--dsw-alias-label-primary);cursor:pointer;text-align:left;background:0 0;border:none;border-radius:6px;flex:1;align-items:center;gap:6px;padding:4px 6px;font-size:12.5px;font-weight:500;display:flex}.mL8Uca_groupToggle:hover{background:var(--dsw-alias-interactive-bg-hover)}.mL8Uca_groupChevron{border-right:1.5px solid var(--dsw-alias-label-tertiary);border-bottom:1.5px solid var(--dsw-alias-label-tertiary);flex:none;width:7px;height:7px;margin-bottom:2px;transition:transform .12s;transform:rotate(45deg)}.mL8Uca_groupChevron[data-collapsed]{margin-bottom:0;transform:rotate(-45deg)}.mL8Uca_groupName{text-overflow:ellipsis;white-space:nowrap;overflow:hidden}.mL8Uca_groupCount{color:var(--dsw-alias-label-tertiary);flex:none;font-weight:400}.mL8Uca_tableWrap{border:1px solid var(--dsw-alias-border-l1);border-radius:10px;flex:1;min-height:0;overflow:auto}.mL8Uca_table{border-collapse:collapse;width:100%;font-size:12.5px}.mL8Uca_table th{z-index:1;text-align:left;background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-secondary);border-bottom:1px solid var(--dsw-alias-border-l1);white-space:nowrap;padding:8px 10px;font-weight:600;position:sticky;top:0}.mL8Uca_table td{border-bottom:1px solid var(--dsw-alias-separator-primary);vertical-align:top;padding:7px 10px}.mL8Uca_table tbody tr:last-child td{border-bottom:none}.mL8Uca_table tbody tr:hover td{background:var(--dsw-alias-interactive-bg-hover)}.mL8Uca_mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}.mL8Uca_cellMuted{color:var(--dsw-alias-label-tertiary)}.mL8Uca_actions{white-space:nowrap;align-items:center;gap:8px;display:flex}.mL8Uca_inlineTest{color:var(--dsw-alias-label-secondary);align-items:center;gap:6px;font-size:11.5px;display:inline-flex}.mL8Uca_inlineTest[data-status=ok]{color:var(--dsw-alias-state-success-primary)}.mL8Uca_inlineTest[data-status=fail]{color:var(--dsw-alias-state-error-primary)}.mL8Uca_badge{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);white-space:nowrap;border-radius:999px;padding:1px 8px;font-size:11px;line-height:1.6;display:inline-block}.mL8Uca_badge[data-kind=key]{color:var(--dsw-alias-state-business-primary);border-color:var(--dsw-alias-state-business-primary)}.mL8Uca_badge[data-kind=password]{color:var(--dsw-alias-state-warn-primary);border-color:var(--dsw-alias-state-warn-primary)}.mL8Uca_badge[data-kind=agent]{color:var(--dsw-alias-state-success-primary);border-color:var(--dsw-alias-state-success-primary)}.mL8Uca_badge[data-kind=proxy]{color:var(--dsw-alias-state-business-primary);border-color:var(--dsw-alias-state-business-primary);margin-left:6px}.mL8Uca_badge[data-status=ok]{color:var(--dsw-alias-state-success-primary);border-color:var(--dsw-alias-state-success-primary)}.mL8Uca_badge[data-status=fail]{color:var(--dsw-alias-state-error-primary);border-color:var(--dsw-alias-state-error-primary)}.mL8Uca_badge[data-status=timeout]{color:var(--dsw-alias-state-warn-primary);border-color:var(--dsw-alias-state-warn-primary)}.mL8Uca_primaryButton{color:var(--dsw-alias-label-primary-foreground);background:var(--dsw-alias-button-info-fill);cursor:pointer;white-space:nowrap;border:none;border-radius:8px;padding:6px 14px;font-size:13px;font-weight:600}.mL8Uca_primaryButton:hover:not(:disabled){background:var(--dsw-alias-button-info-hover)}.mL8Uca_primaryButton:disabled{opacity:.5;cursor:default}.mL8Uca_ghostButton{color:var(--dsw-alias-label-primary);border:1px solid var(--dsw-alias-border-l2);cursor:pointer;white-space:nowrap;background:0 0;border-radius:8px;padding:5px 12px;font-size:12px}.mL8Uca_ghostButton:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}.mL8Uca_ghostButton:disabled{opacity:.45;cursor:default}.mL8Uca_iconButton{width:26px;height:26px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:6px;justify-content:center;align-items:center;padding:0;font-size:13px;display:inline-flex}.mL8Uca_iconButton:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.mL8Uca_linkButton{color:var(--dsw-alias-state-business-primary);cursor:pointer;white-space:nowrap;background:0 0;border:none;padding:0;font-size:12px}.mL8Uca_linkButton:hover:not(:disabled){text-decoration:underline}.mL8Uca_linkButton:disabled{opacity:.45;cursor:default}.mL8Uca_linkButton[data-danger]{color:var(--dsw-alias-state-error-primary)}.mL8Uca_spinner{border:2px solid var(--dsw-alias-state-business-primary);vertical-align:-1px;border-top-color:#0000;border-radius:50%;flex:none;width:11px;height:11px;animation:.8s linear infinite mL8Uca_dshSshSpin;display:inline-block}@keyframes mL8Uca_dshSshSpin{to{transform:rotate(360deg)}}.mL8Uca_banner{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);overflow-wrap:anywhere;border-radius:8px;padding:8px 12px;font-size:12.5px;line-height:1.5}.mL8Uca_importSkips{border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-2);border-radius:8px;flex-direction:column;gap:4px;margin:6px 0 0;padding:8px 12px;list-style:none;display:flex}.mL8Uca_importSkipRow{justify-content:space-between;align-items:baseline;gap:12px;font-size:12px;display:flex}.mL8Uca_banner[data-kind=ok]{color:var(--dsw-alias-state-success-primary);border-color:var(--dsw-alias-state-success-primary)}.mL8Uca_banner[data-kind=error]{color:var(--dsw-alias-state-error-primary);border-color:var(--dsw-alias-state-error-primary)}.mL8Uca_banner[data-kind=info]{color:var(--dsw-alias-state-business-primary);border-color:var(--dsw-alias-state-business-primary)}.mL8Uca_empty,.mL8Uca_loading{text-align:center;color:var(--dsw-alias-label-tertiary);padding:28px 12px;font-size:12.5px}.mL8Uca_modalBackdrop{z-index:40;background:var(--dsw-alias-bg-mask-1);justify-content:center;align-items:center;display:flex;position:fixed;inset:0}.mL8Uca_modal{background:var(--dsw-alias-bg-base);border:1px solid var(--dsw-alias-border-l2);width:min(560px,100vw - 48px);max-height:calc(100vh - 96px);box-shadow:var(--dsw-shadow-lv3);color:var(--dsw-alias-label-primary);border-radius:14px;flex-direction:column;gap:12px;padding:18px;display:flex;overflow-y:auto}.mL8Uca_modalTitle{margin:0;font-size:15px;font-weight:700}.mL8Uca_modalFooter{justify-content:flex-end;gap:10px;margin-top:4px;display:flex}.mL8Uca_formError{color:var(--dsw-alias-state-error-primary);margin:0;font-size:12px}.mL8Uca_hint{color:var(--dsw-alias-label-tertiary);font-size:11.5px}.mL8Uca_field{flex-direction:column;gap:5px;display:flex}.mL8Uca_fieldLabel{color:var(--dsw-alias-label-secondary);font-size:12px;font-weight:600}.mL8Uca_input{color:var(--dsw-alias-label-primary);background:var(--dsw-specific-input-major);border:1px solid var(--dsw-alias-border-l2);resize:vertical;border-radius:8px;outline:none;padding:7px 10px;font-family:inherit;font-size:13px}.mL8Uca_input:focus{border-color:var(--dsw-alias-state-business-primary)}.mL8Uca_input::placeholder{color:var(--dsw-alias-label-tertiary)}.mL8Uca_input:disabled{opacity:.55}.mL8Uca_formRow{grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px 12px;display:grid}.mL8Uca_radioRow{align-items:center;gap:16px;display:flex}.mL8Uca_radioLabel{color:var(--dsw-alias-label-primary);cursor:pointer;align-items:center;gap:6px;font-size:13px;display:inline-flex}.mL8Uca_termBody{flex-direction:column;flex:1;gap:8px;min-height:0;display:flex;overflow:hidden}.mL8Uca_termWrap{border:1px solid var(--dsw-alias-border-l1);background:#0b0e14;border-radius:10px;flex:1;min-height:0;position:relative;overflow:hidden}.mL8Uca_termContainer{position:absolute;inset:8px 10px}.mL8Uca_termPlaceholder{z-index:2;text-align:center;color:var(--dsw-alias-label-tertiary);background:var(--dsw-alias-bg-base);justify-content:center;align-items:center;padding:0 24px;font-size:12.5px;display:flex;position:absolute;inset:0}.mL8Uca_hiddenFile{display:none}.mL8Uca_browsePanel{border:1px solid var(--dsw-alias-border-l1);border-radius:10px;flex-direction:column;flex:none;display:flex;overflow:hidden}.mL8Uca_browseHeader{background:var(--dsw-alias-bg-layer-2);border-bottom:1px solid var(--dsw-alias-border-l1);align-items:center;gap:8px;padding:8px 10px;display:flex}.mL8Uca_browsePath{text-overflow:ellipsis;white-space:nowrap;min-width:0;color:var(--dsw-alias-label-secondary);flex:1;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;overflow:hidden}.mL8Uca_browseList{max-height:240px;overflow-y:auto}.mL8Uca_dirRow{text-align:left;width:100%;font:inherit;color:var(--dsw-alias-label-primary);border:none;border-bottom:1px solid var(--dsw-alias-separator-primary);cursor:pointer;background:0 0;grid-template-columns:minmax(0,1fr) auto auto;gap:12px;padding:5px 10px;font-size:12.5px;display:grid}.mL8Uca_dirRow:hover{background:var(--dsw-alias-interactive-bg-hover)}.mL8Uca_dirRow[data-type=dir] .mL8Uca_dirName{color:var(--dsw-alias-state-business-primary)}.mL8Uca_dirRow[data-up]{color:var(--dsw-alias-label-secondary)}.mL8Uca_dirName{text-overflow:ellipsis;white-space:nowrap;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow:hidden}.mL8Uca_dirType{color:var(--dsw-alias-label-tertiary);white-space:nowrap}.mL8Uca_dirSize{color:var(--dsw-alias-label-tertiary);white-space:nowrap;text-align:right}.mL8Uca_transferBlock{flex-direction:column;flex:none;gap:6px;display:flex}.mL8Uca_progressMeta{color:var(--dsw-alias-label-secondary);flex-wrap:wrap;gap:12px;font-size:12px;display:flex}.mL8Uca_progressTrack{background:var(--dsw-alias-interactive-bg-hover);border-radius:999px;height:8px;overflow:hidden}.mL8Uca_progressBar{background:var(--dsw-alias-state-business-primary);border-radius:999px;height:100%;transition:width .12s linear}.mL8Uca_tunnelList{flex-direction:column;flex:none;gap:8px;display:flex}.mL8Uca_tunnelRow{background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2);border-radius:10px;align-items:center;gap:10px;padding:8px 12px;display:flex}.mL8Uca_tunnelRow[data-state=forwarding]{border-color:var(--dsw-alias-state-success-primary)}.mL8Uca_tunnelRow[data-state=connecting]{border-color:var(--dsw-alias-state-warn-primary)}.mL8Uca_tunnelRow[data-state=failed]{border-color:var(--dsw-alias-state-error-primary)}.mL8Uca_tunnelLabel{text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;overflow:hidden}.mL8Uca_formCard{background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l1);border-radius:10px;flex-direction:column;flex:none;gap:10px;padding:12px;display:flex}.mL8Uca_clusterForm{flex-direction:column;flex:none;gap:8px;display:flex}.mL8Uca_clusterFilters{grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;display:grid}.mL8Uca_commandInput{min-height:96px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}.mL8Uca_cellDetails summary{cursor:pointer;color:var(--dsw-alias-label-secondary);font-size:12px}.mL8Uca_cellPre{background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2);white-space:pre-wrap;word-break:break-all;border-radius:6px;max-height:180px;margin:4px 0 0;padding:6px 8px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11.5px;overflow:auto}";
 		const tagId$6 = "@linxin666/dsh-web-all/packages/dsh-ssh/src/client/panel/panel.module.css";
 		if (typeof document !== "undefined" && document.querySelector("style[data-plugin-css=" + JSON.stringify(tagId$6) + "]") === null) {
 			const tag = document.createElement("style");
@@ -19689,9 +19772,6 @@ window.__ModuleLoader__.load({
 			"dirType": "mL8Uca_dirType",
 			"dshSshSpin": "mL8Uca_dshSshSpin",
 			"empty": "mL8Uca_empty",
-			"entry": "mL8Uca_entry",
-			"entryIcon": "mL8Uca_entryIcon",
-			"entryLabel": "mL8Uca_entryLabel",
 			"field": "mL8Uca_field",
 			"fieldLabel": "mL8Uca_fieldLabel",
 			"fillBody": "mL8Uca_fillBody",
@@ -33846,7 +33926,7 @@ window.__ModuleLoader__.load({
 			subscribe: () => () => void 0
 		};
 		/** The xterm terminal view. */
-		function TerminalTab({ api, presetAlias, requestId, terminalFont }) {
+		function TerminalTab({ api, controller, sessionId, presetAlias, requestId, terminalFont }) {
 			const [hosts, setHosts] = (0, react.useState)([]);
 			const [alias, setAlias] = (0, react.useState)(presetAlias ?? "");
 			const [status, setStatus] = (0, react.useState)({ kind: "idle" });
@@ -33891,7 +33971,12 @@ window.__ModuleLoader__.load({
 			(0, react.useEffect)(() => {
 				if (presetAlias !== void 0) setAlias(presetAlias);
 			}, [presetAlias, requestId]);
-			const teardown = () => {
+			/**
+			* Tear the view down.
+			* @param leave - `detach` leaves the host session alive for a reattach
+			*   (panel switch, unmount); `close` ends it (the disconnect control).
+			*/
+			const teardown = (leave) => {
 				setAuthPrompt(void 0);
 				setAuthInputs([]);
 				const connection = connRef.current;
@@ -33901,7 +33986,8 @@ window.__ModuleLoader__.load({
 					connection.onOutput = void 0;
 					connection.onExit = void 0;
 					connection.onAuthPrompt = void 0;
-					connection.close();
+					if (leave === "detach") connection.detach();
+					else connection.close();
 				}
 				dataSubRef.current?.dispose();
 				dataSubRef.current = null;
@@ -33910,7 +33996,7 @@ window.__ModuleLoader__.load({
 				fitRef.current = null;
 			};
 			(0, react.useEffect)(() => () => {
-				teardown();
+				teardown("detach");
 			}, []);
 			(0, react.useEffect)(() => {
 				let lastCols = -1;
@@ -33941,12 +34027,15 @@ window.__ModuleLoader__.load({
 					window.removeEventListener("resize", sync);
 				};
 			}, []);
-			const connect = () => {
-				const target = alias;
+			/**
+			* Build the xterm view and bind one connection to it.
+			* @param open - opens the transport once the terminal has a size.
+			*/
+			const startSession = (open) => {
 				const container = containerRef.current;
-				if (target === "" || container === null) return;
+				if (container === null) return;
 				if (status.kind === "connecting" || status.kind === "connected") return;
-				teardown();
+				teardown("detach");
 				setStatus({ kind: "connecting" });
 				const term = new import_xterm.Terminal({
 					convertEol: false,
@@ -33963,11 +34052,12 @@ window.__ModuleLoader__.load({
 				term.loadAddon(fit);
 				term.open(container);
 				fit.fit();
-				const connection = api.openTerminal(target, term.cols, term.rows);
+				const connection = open(term.cols, term.rows);
 				termRef.current = term;
 				fitRef.current = fit;
 				connRef.current = connection;
 				let settled = false;
+				let connectedAlias = "";
 				dataSubRef.current = term.onData((data) => {
 					connection.send(data);
 				});
@@ -33979,12 +34069,14 @@ window.__ModuleLoader__.load({
 					});
 					setAuthInputs(prompts.map(() => ""));
 				};
-				connection.onReady = () => {
+				connection.onReady = (id, readyAlias) => {
+					connectedAlias = readyAlias;
+					controller.setTerminalSession(id);
 					setAuthPrompt(void 0);
 					setAuthInputs([]);
 					setStatus({
 						kind: "connected",
-						alias: target
+						alias: readyAlias
 					});
 				};
 				connection.onOutput = (data) => {
@@ -33999,15 +34091,29 @@ window.__ModuleLoader__.load({
 					dataSubRef.current = null;
 					term.options.disableStdin = true;
 					connRef.current = null;
+					controller.clearTerminalSession();
 					setStatus({
 						kind: "exited",
-						alias: target,
+						alias: connectedAlias !== "" ? connectedAlias : alias,
 						detail: error
 					});
 				};
 			};
+			const connect = () => {
+				const target = alias;
+				if (target === "") return;
+				startSession((cols, rows) => api.openTerminal(target, cols, rows));
+			};
+			const reattachedRef = (0, react.useRef)(void 0);
+			(0, react.useEffect)(() => {
+				if (sessionId === void 0 || connRef.current !== null) return;
+				if (reattachedRef.current === sessionId) return;
+				reattachedRef.current = sessionId;
+				startSession((cols, rows) => api.attachTerminal(sessionId, cols, rows));
+			}, [sessionId]);
 			const disconnect = () => {
-				teardown();
+				teardown("close");
+				controller.clearTerminalSession();
 				setStatus({ kind: "idle" });
 			};
 			const submitAuth = (e) => {
@@ -34783,10 +34889,14 @@ window.__ModuleLoader__.load({
 		//#region ../dsh-ssh/src/client/panel/SshPanel.tsx
 		/**
 		* The SSH operations panel shell: a header with a close control, a five-tab
-		* bar, and the active tab's content. Tab state lives here (browser session
-		* state); inactive tabs unmount, so each tab fetches its own data on
-		* activation. The hosts tab's connect action switches here to the terminal
-		* tab with the chosen alias preselected.
+		* bar, and the active tab's content.
+		*
+		* The active tab, the pending connect request and the live terminal session id
+		* live in the controller, not in component state: the layout mounts this page
+		* only while the panel is selected, so local state would reset the tab on
+		* every panel switch and lose the id the terminal tab needs to reattach its
+		* host-side session. Inactive tabs unmount, so each tab fetches its own data
+		* on activation.
 		*/
 		/** The tab bar definition (labels resolved at render time). */
 		const TABS = [
@@ -34813,16 +34923,7 @@ window.__ModuleLoader__.load({
 		];
 		/** The tabbed SSH panel. */
 		function SshPanel({ controller, api, terminalFont }) {
-			const panelOpen = (0, react.useSyncExternalStore)((0, react.useCallback)((listener) => controller.subscribe(listener), [controller]), (0, react.useCallback)(() => controller.getSnapshot().panelOpen, [controller]));
-			const [activeTab, setActiveTab] = (0, react.useState)("hosts");
-			const [connectRequest, setConnectRequest] = (0, react.useState)(null);
-			const handleConnect = (alias) => {
-				setActiveTab("terminal");
-				setConnectRequest((prev) => ({
-					alias,
-					nonce: (prev?.nonce ?? 0) + 1
-				}));
-			};
+			const { panelOpen, activeTab, connectRequest, terminalSessionId } = (0, react.useSyncExternalStore)((0, react.useCallback)((listener) => controller.subscribe(listener), [controller]), (0, react.useCallback)(() => controller.getSnapshot(), [controller]));
 			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 				className: panel_module_css_default$1.panel,
 				"data-dsh-plugin": "ssh",
@@ -34858,7 +34959,7 @@ window.__ModuleLoader__.load({
 							"data-dsh-part": "tab",
 							className: panel_module_css_default$1.tab,
 							onClick: () => {
-								setActiveTab(tab.id);
+								controller.setActiveTab(tab.id);
 							},
 							children: tab.label()
 						}, tab.id))
@@ -34868,12 +34969,16 @@ window.__ModuleLoader__.load({
 						children: [
 							activeTab === "hosts" && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(HostsTab, {
 								api,
-								onConnect: handleConnect
+								onConnect: (alias) => {
+									controller.requestConnect(alias);
+								}
 							}),
 							activeTab === "terminal" && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(TerminalTab, {
 								api,
+								controller,
 								presetAlias: connectRequest?.alias,
 								requestId: connectRequest?.nonce,
+								sessionId: terminalSessionId,
 								terminalFont
 							}),
 							activeTab === "transfer" && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(TransferTab, { api }),
@@ -34888,296 +34993,94 @@ window.__ModuleLoader__.load({
 			});
 		}
 		//#endregion
-		//#region ../dsh-ssh/src/client/body-mutations.ts
-		/** Cross-bundle registry key; `Symbol.for` so every module copy agrees. */
-		const HUB_KEY$2 = Symbol.for("dsh-web.body-mutation-hub");
-		const INVALIDATION_ONLY$2 = Symbol.for("dsh-web.body-mutation-invalidation");
-		function needsRecords$2(subscribers) {
-			for (const listener of subscribers) if (!listener[INVALIDATION_ONLY$2]) return true;
-			return false;
-		}
+		//#region ../dsh-ssh/src/client/native-panel.tsx
+		/** Row order among the shell's global panel rows (Plugins 0, Schedule 10, board 20, skill center 30). */
+		const PANEL_ORDER$1 = 40;
 		/**
-		* Subscribe to a coalesced DOM re-check without retaining mutation records.
-		* The marked wrapper also works with an older hub, which delivers records
-		* that it simply ignores until a page reload picks up the updated hub.
+		* The sidebar row glyph the shell asks for at its own size and active state.
+		* The shell owns the button, label, tooltip and rail geometry; this component
+		* draws only the glyph, like every other panel row.
+		* @param props - the shell's icon share: square edge and selection state.
+		* @returns the decorative terminal glyph.
 		*/
-		function subscribeBodyInvalidations$2(subscriber) {
-			const listener = () => {
-				subscriber();
-			};
-			listener[INVALIDATION_ONLY$2] = true;
-			return subscribeBodyMutations$2(listener);
-		}
-		/**
-		* Subscribe to body-level childList mutations.
-		* @param subscriber - called at most once per animation frame with the records
-		*   collected since the previous flush; must be safe to run repeatedly.
-		* @returns the disposer removing this subscriber (and the observer when it was
-		*   the last one).
-		*/
-		function subscribeBodyMutations$2(subscriber) {
-			if (typeof globalThis === "undefined" || typeof document === "undefined") return () => {};
-			if (typeof MutationObserver !== "function") return () => {};
-			const registry = globalThis;
-			let hub = registry[HUB_KEY$2];
-			if (hub === void 0) {
-				const subscribers = /* @__PURE__ */ new Set();
-				const created = {
-					observer: void 0,
-					subscribers,
-					pending: [],
-					scheduled: false
-				};
-				const flush = () => {
-					created.frame = void 0;
-					created.scheduled = false;
-					const batch = created.pending;
-					created.pending = [];
-					for (const listener of [...subscribers]) {
-						if (!subscribers.has(listener)) continue;
-						try {
-							listener(batch);
-						} catch {}
-					}
-				};
-				const schedule = () => {
-					if (created.scheduled) return;
-					created.scheduled = true;
-					if (typeof requestAnimationFrame === "function") created.frame = requestAnimationFrame(flush);
-					else flush();
-				};
-				created.observer = new MutationObserver((records) => {
-					if (needsRecords$2(subscribers)) for (const record of records) created.pending.push(record);
-					schedule();
-				});
-				created.observer.observe(document.body ?? document.documentElement, {
-					childList: true,
-					subtree: true
-				});
-				registry[HUB_KEY$2] = created;
-				hub = created;
-			}
-			const active = hub;
-			active.subscribers.add(subscriber);
-			let subscribed = true;
-			return () => {
-				if (!subscribed) return;
-				subscribed = false;
-				active.subscribers.delete(subscriber);
-				if (!needsRecords$2(active.subscribers)) active.pending = [];
-				if (active.subscribers.size === 0 && registry[HUB_KEY$2] === active) {
-					active.observer.disconnect();
-					if (active.frame !== void 0 && typeof cancelAnimationFrame === "function") cancelAnimationFrame(active.frame);
-					active.frame = void 0;
-					active.pending = [];
-					active.scheduled = false;
-					delete registry[HUB_KEY$2];
-				}
-			};
-		}
-		//#endregion
-		//#region ../dsh-ssh/src/client/panel-mount-core.ts
-		/**
-		* Center-column panel takeover lifecycle.
-		*
-		* The `conversation` slot is single-occupant (ui-conversation) and external
-		* plugins cannot declare slots, so a family panel takes over the center
-		* column at the DOM level: a container is appended inside the center column
-		* (`[class*="centerCol"]`, the 0.1.0-rc.6+ AppFrame layout; previously
-		* `[data-pane="conversation"]` on older shells — the mount selector keeps
-		* both, ssh #243 / task-board #107) as an extra trailing child React never
-		* manages, and a stylesheet rule hides the conversation content while the
-		* panel is active. Toggling is a data attribute on <html> — no React
-		* involvement, so the conversation subtree underneath stays mounted and
-		* stateful.
-		*
-		* Consuming plugins keep a thin wrapper that supplies the panel tree,
-		* container attribute names, and stylesheet class; those names are pinned by
-		* each package's CSS, skins, and the semantic-attributes contract. Occupancy
-		* across the family rides {@link PANEL_FAMILY}, not per-plugin sibling pairs,
-		* so a third panel cannot leave a stale occupant behind. The sidebar row
-		* toggling the panel shares its core the same way
-		* (shared/client/sidebar-entry-core.ts, synced copy).
-		*
-		* The task board no longer mounts through this core: it contributes a
-		* `sidebar.panellist` row and a keyed `main` page through the official slots
-		* system, so the shell owns its container. It keeps a PANEL_FAMILY row because
-		* the panels that do mount through this core take the column over at the DOM
-		* level and would hide the board's page; the board must be able to announce
-		* that it took the column, and to close when a takeover panel announces. Its
-		* half of the protocol lives in
-		* packages/dsh-task-board/src/client/native-panel.tsx, which names those
-		* takeover rows in `TAKEOVER_PANEL_NAMES` because it cannot value-import this
-		* file.
-		*/
-		/**
-		* The center column's panel family: the single source of occupancy truth.
-		*
-		* Every family panel appears exactly once. Opening one clears the other rows'
-		* `<html>` attributes and broadcasts its own name; an open panel closes when
-		* the broadcast name is not its own. The previous shape paired each panel with
-		* ONE sibling (ssh <-> task-board), which cannot express three panels: a panel
-		* that did not name the third one stayed logically open while invisible, so
-		* its sidebar row needed a second click to reopen. Adding a family panel is
-		* one row here, not N pairwise options.
-		*/
-		const PANEL_FAMILY = [
-			{
-				panel: "taskboard",
-				activeAttribute: "data-dsh-taskboard-active"
-			},
-			{
-				panel: "ssh",
-				activeAttribute: "data-dsh-ssh-active"
-			},
-			{
-				panel: "skill-explorer",
-				activeAttribute: "data-dsh-skill-explorer-active"
-			}
-		];
-		const CONVERSATION_COLUMN_SELECTOR = "[data-pane=\"conversation\"], [class*=\"centerCol\"]";
-		/** Cross-plugin activation event; detail is the activating panel name. */
-		const ACTIVATE_EVENT = "dsh-panel-activate";
-		const SIDEBAR_ROW_SELECTOR = "[class*=\"sessionRow\"], [class*=\"projectRow\"], [class*=\"searchResultRow\"], [class*=\"searchResultWorkspace\"], [class*=\"newSession\"]";
-		/** Find the center column, or undefined while the frame is not mounted. */
-		function conversationColumn() {
-			return document.querySelector(CONVERSATION_COLUMN_SELECTOR) ?? void 0;
-		}
-		/**
-		* Mount a family panel into the center column and bind its visibility to the
-		* owning controller's open state.
-		* @returns disposer unmounting the tree and restoring the column.
-		*/
-		function mountCenterPanel(options) {
-			let root;
-			let container;
-			let unsubscribeLocale;
-			try {
-				unsubscribeLocale = options.locale?.subscribe(() => {
-					if (root !== void 0) options.render(root);
-				});
-			} catch {}
-			const ensure = () => {
-				if (container !== void 0 && !container.isConnected) {
-					root?.unmount();
-					root = void 0;
-					container.remove();
-					container = void 0;
-				}
-				if (container === void 0) {
-					const column = conversationColumn();
-					if (column === void 0) return;
-					container = document.createElement("div");
-					container.dataset[options.viewDatasetKey] = "";
-					container.dataset.dshPlugin = options.pluginName;
-					container.className = options.viewClassName;
-					column.appendChild(container);
-				}
-				if (root !== void 0 || !options.isOpen()) return;
-				root = (0, react_dom_client.createRoot)(container);
-				options.render(root);
-			};
-			const unsubscribeBody = subscribeBodyInvalidations$2(() => {
-				ensure();
+		function SshPanelIcon({ size }) {
+			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
+				viewBox: "0 0 16 16",
+				width: size,
+				height: size,
+				fill: "none",
+				stroke: "currentColor",
+				strokeWidth: "1.5",
+				strokeLinecap: "round",
+				strokeLinejoin: "round",
+				"aria-hidden": "true",
+				children: [
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("rect", {
+						x: "1.75",
+						y: "2.25",
+						width: "12.5",
+						height: "11.5",
+						rx: "1.75"
+					}),
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M4.25 5.25l2.75 2.75-2.75 2.75" }),
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M8.5 10.75h3.25" })
+				]
 			});
-			const applyActive = () => {
-				if (options.isOpen()) {
-					ensure();
-					for (const member of PANEL_FAMILY) if (member.panel !== options.panelName) document.documentElement.removeAttribute(member.activeAttribute);
-					document.documentElement.setAttribute(options.activeAttribute, "");
-					document.dispatchEvent(new CustomEvent(ACTIVATE_EVENT, { detail: options.panelName }));
-				} else document.documentElement.removeAttribute(options.activeAttribute);
-			};
-			const onOtherActivate = (event) => {
-				if (event.detail !== options.panelName && options.isOpen()) options.close();
-			};
-			const onClickSidebarRow = (event) => {
-				if (!options.isOpen()) return;
-				const target = event.target;
-				if (target === null) return;
-				if (target.closest(SIDEBAR_ROW_SELECTOR) !== null) options.close();
-			};
-			document.addEventListener("click", onClickSidebarRow, true);
-			document.addEventListener(ACTIVATE_EVENT, onOtherActivate);
-			const unsubscribe = options.subscribe(applyActive);
-			applyActive();
-			ensure();
-			return () => {
-				document.removeEventListener("click", onClickSidebarRow, true);
-				document.removeEventListener(ACTIVATE_EVENT, onOtherActivate);
-				unsubscribeBody();
-				unsubscribe();
-				unsubscribeLocale?.();
-				document.documentElement.removeAttribute(options.activeAttribute);
-				root?.unmount();
-				root = void 0;
-				container?.remove();
-				container = void 0;
-			};
 		}
-		//#endregion
-		//#region ../dsh-ssh/src/client/mount.tsx
 		/**
-		* Mount the panel React tree into the center column and bind its visibility
-		* to the controller's panelOpen state.
-		* @param controller - the panel controller driving the view.
-		* @param api - the SSH API client the tabs operate through.
-		* @param terminalFont - live terminal-font setting source (issue #577).
-		* @param locale - locale-change source; when given, re-renders an open panel
-		*   on a Language switch.
-		* @returns disposer unmounting the tree and restoring the column.
+		* The main-slot page. The layout mounts it only while this panel is selected;
+		* the wrapper carries the pinned `data-dsh-ssh-view` semantic anchor (L2
+		* contract, skins) the takeover container used to own.
+		* @param props - the framework main-slot share plus this entry's injected face.
+		* @returns the SSH panel page.
 		*/
-		function mountPanel(controller, api, terminalFont, locale) {
-			return mountCenterPanel({
-				render: (root) => root.render(/* @__PURE__ */ (0, react_jsx_runtime.jsx)(SshPanel, {
+		function SshPanelPage({ controller, api, terminalFont }) {
+			return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+				className: panel_module_css_default$1.view,
+				"data-dsh-ssh-view": "",
+				"data-dsh-plugin": "ssh",
+				children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(SshPanel, {
 					controller,
 					api,
 					terminalFont
-				})),
-				viewDatasetKey: "dshSshView",
-				pluginName: "ssh",
-				viewClassName: panel_module_css_default$1.view,
-				activeAttribute: "data-dsh-ssh-active",
-				panelName: "ssh",
-				isOpen: () => controller.getSnapshot().panelOpen,
-				close: () => controller.close(),
-				subscribe: (listener) => controller.subscribe(listener),
-				locale
+				})
 			});
 		}
-		//#endregion
-		//#region ../dsh-ssh/src/client/panel/controller.ts
-		/** The panel state owner the sidebar entry toggles and the view renders from. */
-		var PanelController$1 = class {
-			panelOpen = false;
-			listeners = /* @__PURE__ */ new Set();
-			getSnapshot() {
-				return { panelOpen: this.panelOpen };
-			}
-			subscribe(fn) {
-				this.listeners.add(fn);
-				return () => {
-					this.listeners.delete(fn);
-				};
-			}
-			open() {
-				if (this.panelOpen) return;
-				this.panelOpen = true;
-				this.notify();
-			}
-			close() {
-				if (!this.panelOpen) return;
-				this.panelOpen = false;
-				this.notify();
-			}
-			toggle() {
-				if (this.panelOpen) this.close();
-				else this.open();
-			}
-			notify() {
-				for (const fn of [...this.listeners]) fn();
-			}
-		};
+		/**
+		* Register the SSH panel's sidebar row and center-column page.
+		*
+		* Both seats are declared by shell plugins this package does not depend on at
+		* runtime, so each registration is wrapped in `ctx.slots.inject`: the callback
+		* runs only after the owning entry declares the seat, and a shell that never
+		* declares it leaves the panel simply absent instead of failing boot.
+		* @param ctx - client root context (services: slots).
+		* @param controller - the controller the page and the row drive.
+		* @param api - the SSH API client the page operates through.
+		* @param terminalFont - live terminal-font setting source (issue #577).
+		* @returns disposer releasing both registrations.
+		*/
+		function registerSshPanel(ctx, controller, api, terminalFont) {
+			const slots = ctx.slots;
+			const disposers = [];
+			disposers.push(slots.inject("sidebar.panellist", () => slots.register({
+				name: "sidebar.panellist",
+				id: "ssh",
+				order: PANEL_ORDER$1,
+				label: () => tt$1("entry.label")
+			}, SshPanelIcon)));
+			disposers.push(slots.inject("main", () => slots.register({
+				name: "main",
+				key: "ssh",
+				inject: () => ({
+					controller,
+					api,
+					terminalFont
+				})
+			}, SshPanelPage)));
+			return () => {
+				for (const dispose of disposers.splice(0)) dispose();
+			};
+		}
 		//#endregion
 		//#region ../dsh-ssh/src/client/settings-binding.ts
 		/**
@@ -35279,175 +35182,6 @@ window.__ModuleLoader__.load({
 				};
 			}
 			return new SharedFormsReader(ctx.configForms, field);
-		}
-		//#endregion
-		//#region ../dsh-ssh/src/client/sidebar-entry-core.ts
-		/**
-		* Shared sidebar entry injection core.
-		*
-		* dsh's sidebar shell exposes no slot an external plugin can register into,
-		* so the entry row is injected between the shell's New Session button and the
-		* workspace browser. The injection self-heals: a MutationObserver watches the
-		* sidebar root and re-inserts the row whenever a React re-render displaces it
-		* (re-insertion happens in the same frame, before paint, so no flicker).
-		*
-		* The row is plain DOM (no React tree) so it can never disturb the shell's
-		* reconciliation; the view it toggles is a separate root owned by the caller.
-		*
-		* Packages receive this file as a generated copy via scripts/sync-shared.mjs;
-		* edit the shared source and re-run the sync instead of editing a copy.
-		*/
-		/** Find the sidebar shell root element, or undefined while not yet mounted. */
-		function sidebarRoot() {
-			const column = document.querySelector("[data-pane=\"sidebar\"], [class*=\"sidebarCol\"]");
-			if (column === null) return void 0;
-			return column.querySelector("[class*=\"logoRow\"]")?.parentElement ?? column.firstElementChild;
-		}
-		/** The New Session button: nested in the logo row on current shells, a direct child on legacy shells. */
-		function newSessionButton(root) {
-			const nested = root.querySelector("button[class*=\"newSession\"]");
-			if (nested !== null) return nested;
-			for (const child of root.children) if (child.tagName === "BUTTON") return child;
-		}
-		/** Build the entry row (detached; inserted once the shell is up). */
-		function createEntry(options) {
-			const entry = document.createElement("button");
-			entry.type = "button";
-			entry.setAttribute(options.rowAttribute, "");
-			if (options.plugin !== void 0) {
-				entry.setAttribute("data-dsh-plugin", options.plugin);
-				entry.setAttribute("data-dsh-part", "sidebar-entry");
-			}
-			entry.className = options.css["entry"] ?? "";
-			const labelSpan = document.createElement("span");
-			labelSpan.className = options.css["entryLabel"] ?? "";
-			const iconSpan = document.createElement("span");
-			iconSpan.className = options.css["entryIcon"] ?? "";
-			iconSpan.innerHTML = options.icon;
-			entry.append(iconSpan, labelSpan);
-			const applyLabel = () => {
-				entry.setAttribute("aria-label", options.label());
-				if (options.tooltip !== void 0) entry.setAttribute("title", options.tooltip());
-				labelSpan.textContent = options.label();
-			};
-			applyLabel();
-			entry.addEventListener("click", options.onToggle);
-			return {
-				entry,
-				applyLabel
-			};
-		}
-		/** Re-insert the entry after the New Session row (before the browser region). */
-		function placeEntry(root, entry, options) {
-			const button = newSessionButton(root);
-			if (button === void 0) return false;
-			if (entry.parentElement !== root) {
-				const row = button.closest("[class*=\"logoRow\"]");
-				const base = row !== null && row.parentElement === root ? row : button;
-				const family = Array.from(root.children).filter((el) => el instanceof HTMLElement && el.matches(options.familySelectors.join(", ")));
-				const anchor = options.position === "before" ? family.length > 0 ? family[0] : base.nextElementSibling : family.length > 0 ? family[family.length - 1].nextElementSibling : base.nextElementSibling;
-				root.insertBefore(entry, anchor);
-			}
-			return true;
-		}
-		/**
-		* Mount the sidebar entry, waiting for the shell to render and self-healing
-		* on later React re-renders.
-		* @param options - the row's attribute/icon/copy/action/ordering configuration.
-		* @returns disposer removing the entry and its observers.
-		*/
-		function mountSidebarEntry$1(options) {
-			if (typeof document !== "undefined" && document.querySelector(options.rowSelector) !== null) return () => {};
-			const { entry, applyLabel } = createEntry(options);
-			let root;
-			let placed = false;
-			let unsubscribeRefresh;
-			if (options.refresh !== void 0) try {
-				unsubscribeRefresh = options.refresh.subscribe(applyLabel);
-			} catch {}
-			const tryPlace = () => {
-				if (root !== void 0 && !root.isConnected) {
-					rootObserver.disconnect();
-					root = void 0;
-					placed = false;
-				}
-				if (placed) {
-					if (document.body.contains(entry)) return;
-					rootObserver.disconnect();
-					root = void 0;
-					placed = false;
-				}
-				root ??= sidebarRoot();
-				if (root === void 0) return;
-				placed = placeEntry(root, entry, options);
-				if (placed) rootObserver.observe(root, {
-					childList: true,
-					subtree: true
-				});
-			};
-			const unsubscribeBody = subscribeBodyInvalidations$2(() => {
-				tryPlace();
-			});
-			const rootObserver = new MutationObserver(() => {
-				if (root === void 0 || !root.isConnected) {
-					placed = false;
-					tryPlace();
-					return;
-				}
-				if (!root.contains(entry)) placed = placeEntry(root, entry, options);
-			});
-			const unsubscribeActive = options.active === void 0 ? void 0 : (() => {
-				const syncActive = () => {
-					if (options.active.isOpen()) entry.dataset.active = "true";
-					else delete entry.dataset.active;
-				};
-				const unsubscribe = options.active.subscribe(syncActive);
-				syncActive();
-				return unsubscribe;
-			})();
-			tryPlace();
-			return () => {
-				unsubscribeBody();
-				rootObserver.disconnect();
-				unsubscribeRefresh?.();
-				unsubscribeActive?.();
-				entry.remove();
-			};
-		}
-		//#endregion
-		//#region ../dsh-ssh/src/client/sidebar-entry.ts
-		/** Stable data attribute identifying the injected entry row. */
-		const ENTRY_SELECTOR = "[data-dsh-ssh-entry]";
-		/** Inline terminal glyph sized to the shell's panel-row navigation icons. */
-		const ICON = "<svg viewBox=\"0 0 16 16\" width=\"16\" height=\"16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"1.75\" y=\"2.25\" width=\"12.5\" height=\"11.5\" rx=\"1.75\"/><path d=\"M4.25 5.25l2.75 2.75-2.75 2.75\"/><path d=\"M8.5 10.75h3.25\"/></svg>";
-		/**
-		* Mount the sidebar entry, waiting for the shell to render and self-healing
-		* on later React re-renders.
-		* @param controller - the panel controller the entry toggles.
-		* @param locale - locale-change source; when given, re-applies the label on
-		*   a Language switch (the plain-DOM row otherwise keeps the mount-time copy).
-		* @returns disposer removing the entry and its observers.
-		*/
-		function mountSidebarEntry(controller, locale) {
-			return mountSidebarEntry$1({
-				rowAttribute: "data-dsh-ssh-entry",
-				rowSelector: ENTRY_SELECTOR,
-				plugin: "ssh",
-				icon: ICON,
-				css: panel_module_css_default$1,
-				label: () => tt$1("entry.label"),
-				tooltip: () => tt$1("entry.tooltip"),
-				refresh: locale === void 0 ? void 0 : { subscribe: (listener) => locale.subscribe(listener) },
-				onToggle: () => {
-					controller.toggle();
-				},
-				position: "after",
-				familySelectors: ["[data-dsh-ssh-entry]"],
-				active: {
-					subscribe: (listener) => controller.subscribe(listener),
-					isOpen: () => controller.getSnapshot().panelOpen
-				}
-			});
 		}
 		//#endregion
 		//#region ../dsh-ssh/src/client/telemetry.ts
@@ -35559,7 +35293,9 @@ window.__ModuleLoader__.load({
 			try {
 				setRuntimeTranslate$1(ctx.locale.bind(NS$5));
 			} catch {}
-			const controller = new PanelController$1();
+			const controller = new PanelController$1({ panel: { select: (panelId) => {
+				ctx.get("layout")?.selectPanel?.(panelId);
+			} } });
 			const api = new SshApi();
 			const settings = bindSettingsReader(ctx, SETTINGS_NS, TERMINAL_FONT_FIELD);
 			const terminalFont = {
@@ -35574,10 +35310,18 @@ window.__ModuleLoader__.load({
 			}, "dsh-ssh: settings binding");
 			const disposers = [];
 			try {
-				disposers.push(mountSidebarEntry(controller, ctx.locale));
-				disposers.push(mountPanel(controller, api, terminalFont, ctx.locale));
+				disposers.push(registerSshPanel(ctx, controller, api, terminalFont));
+				const layoutFace = ctx.get("layout");
+				if (layoutFace?.panelInfo !== void 0) {
+					const sync = () => {
+						const active = layoutFace.panelInfo.getSnapshot().activePanelId;
+						controller.syncPanelSelection(active === "ssh" ? "ssh" : null);
+					};
+					sync();
+					disposers.push(layoutFace.panelInfo.subscribe(sync));
+				}
 			} catch (error) {
-				console.warn("[dsh-ssh] mount failed:", error);
+				console.warn("[dsh-ssh] panel registration failed:", error);
 			}
 			ctx.effect(() => () => {
 				for (const dispose of disposers.splice(0)) dispose();
@@ -38899,50 +38643,6 @@ window.__ModuleLoader__.load({
 			});
 		}
 		/**
-		* The family's single-occupant center-column protocol.
-		*
-		* dsh-ssh still takes the column over at the DOM level: while its
-		* `html[data-dsh-ssh-active]` attribute is set, its stylesheet hides every
-		* other child of the center column, this page included, and the layout cannot
-		* deselect our panel for it (ssh is not a layout panel). Until ssh moves to
-		* the native seats as well, the two have to hand the column to each other
-		* explicitly. The event and the detail values are the shared contract owned by
-		* `shared/client/panel-mount-core.ts`.
-		*/
-		const PANEL_ACTIVATE_EVENT = "dsh-panel-activate";
-		/** This panel's name in the family protocol. */
-		const PANEL_NAME = "skill-explorer";
-		/**
-		* The family panels whose activation closes this panel: exactly the rows that
-		* still mount through the DOM takeover. Empty once every family panel is
-		* native, at which point this whole protocol goes away (the layout alone
-		* decides which main page renders).
-		*/
-		const TAKEOVER_PANEL_NAMES = ["ssh"];
-		/**
-		* Keep this panel mutually exclusive with the DOM-takeover family panels.
-		* @param controller - the controller whose open state drives the protocol.
-		* @returns disposer removing the listener and the subscription.
-		*/
-		function coordinateWithTakeoverPanels(controller) {
-			let open = controller.getSnapshot().panelOpen;
-			const onActivate = (event) => {
-				if (!TAKEOVER_PANEL_NAMES.includes(event.detail)) return;
-				if (controller.getSnapshot().panelOpen) controller.close();
-			};
-			const unsubscribe = controller.subscribe(() => {
-				const next = controller.getSnapshot().panelOpen;
-				if (next === open) return;
-				open = next;
-				if (next) document.dispatchEvent(new CustomEvent(PANEL_ACTIVATE_EVENT, { detail: PANEL_NAME }));
-			});
-			document.addEventListener(PANEL_ACTIVATE_EVENT, onActivate);
-			return () => {
-				document.removeEventListener(PANEL_ACTIVATE_EVENT, onActivate);
-				unsubscribe();
-			};
-		}
-		/**
 		* Register the skill center's sidebar row and center-column page.
 		*
 		* Both seats are declared by shell plugins this package does not depend on at
@@ -38955,7 +38655,6 @@ window.__ModuleLoader__.load({
 		* @returns disposer releasing both registrations.
 		*/
 		function registerSkillExplorerPanel(ctx, controller, api) {
-			const releaseCoordination = coordinateWithTakeoverPanels(controller);
 			const slots = ctx.slots;
 			const disposers = [];
 			disposers.push(slots.inject("sidebar.panellist", () => slots.register({
@@ -38973,7 +38672,6 @@ window.__ModuleLoader__.load({
 				})
 			}, SkillExplorerPanelPage)));
 			return () => {
-				releaseCoordination();
 				for (const dispose of disposers.splice(0)) dispose();
 			};
 		}

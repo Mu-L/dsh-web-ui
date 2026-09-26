@@ -3,10 +3,10 @@
  * plugin bundle.
  *
  * Family plugins that inject at the DOM level must notice when the shell
- * re-renders around their injected node: the sidebar entry rows
- * (sidebar-entry-core), the center-column panel containers
- * (panel-mount-core), and the aggregate shell's column shims. Each consumer
- * used to install its OWN `MutationObserver` on `document.body` with
+ * re-renders around their injected node: the aggregate shell's column shims
+ * and any plugin surface still extending the shell from outside the official
+ * slot seats. Each consumer used to install its OWN `MutationObserver` on
+ * `document.body` with
  * `{ childList: true, subtree: true }`, so a page carrying N family plugins
  * paid N native observers and N callback invocations for EVERY mutation batch
  * the app produced — chat token streaming alone produces many per second, and

@@ -80,69 +80,6 @@ interface PanelFace {
 }
 
 /**
- * The family's single-occupant center-column protocol.
- *
- * The board is the one family member that no longer takes the column over at
- * the DOM level, but dsh-ssh and the skill center still do: while either
- * panel's `html[data-dsh-*-active]` attribute is set, its stylesheet hides
- * every other child of the center column, including this board's page. The
- * layout knows nothing about those two (they are not layout panels), so it
- * cannot deselect the board for us; the board has to hand the column back
- * explicitly. The event and the detail values are the shared contract owned by
- * `shared/client/panel-mount-core.ts`, so the board participates in it rather
- * than inventing a second mechanism.
- */
-const PANEL_ACTIVATE_EVENT = 'dsh-panel-activate'
-
-/** This panel's name in the family protocol. */
-const PANEL_NAME = 'taskboard'
-
-/**
- * The family panels whose activation closes the board, because each one takes
- * the column over at the DOM level and would otherwise hide this board's page
- * while its sidebar row still looks selected. These are exactly the
- * DOM-takeover rows of `PANEL_FAMILY` in `shared/client/panel-mount-core.ts`;
- * that table is the single source of occupancy truth for panels that mount
- * through the core, and the board cannot import it (browser bundles may not
- * value-import across plugins, and the board ships no copy of the core since
- * it left the takeover). Keep this list in step when a family panel joins or
- * leaves the DOM takeover.
- */
-const TAKEOVER_PANEL_NAMES: readonly string[] = ['ssh', 'skill-explorer']
-
-/**
- * Keep the board mutually exclusive with the DOM-takeover family panels.
- *
- * The board contributes the column through the layout, so selecting it makes
- * the shell render its page; a takeover panel needs to be told to let go, or
- * its stylesheet keeps covering the page. The reverse direction is the same:
- * ssh or the skill center taking the column asks the board to hand it back to
- * the conversation, which is what the layout renders underneath them.
- * @param controller - the board controller whose open state drives the protocol.
- * @returns disposer removing the listener and the subscription.
- */
-export function coordinateWithFamilyPanels(controller: BoardController): () => void {
-  let open = controller.getSnapshot().boardOpen
-  const onActivate = (event: Event): void => {
-    if (!TAKEOVER_PANEL_NAMES.includes((event as CustomEvent).detail as string)) return
-    if (controller.getSnapshot().boardOpen) controller.closeBoard()
-  }
-  const unsubscribe = controller.subscribe(() => {
-    const next = controller.getSnapshot().boardOpen
-    if (next === open) return
-    open = next
-    // Only the open transition evicts the family; closing already means the
-    // column returns to the conversation, which needs no announcement.
-    if (next) document.dispatchEvent(new CustomEvent(PANEL_ACTIVATE_EVENT, { detail: PANEL_NAME }))
-  })
-  document.addEventListener(PANEL_ACTIVATE_EVENT, onActivate)
-  return () => {
-    document.removeEventListener(PANEL_ACTIVATE_EVENT, onActivate)
-    unsubscribe()
-  }
-}
-
-/**
  * Register the board's sidebar row and center-column page.
  *
  * Both seats are declared by shell plugins this package does not depend on at
@@ -154,9 +91,6 @@ export function coordinateWithFamilyPanels(controller: BoardController): () => v
  * @returns disposer releasing both registrations.
  */
 export function registerTaskBoardPanel(ctx: ClientContext, controller: BoardController): () => void {
-  // The DOM-takeover family panels and this layout panel share one column;
-  // the protocol keeps them mutually exclusive in both directions.
-  const releaseCoordination = coordinateWithFamilyPanels(controller)
   const slots = ctx.slots as {
     inject(key: string, callback: () => () => void): () => void
     register(options: Record<string, unknown>, component: unknown): () => void
@@ -179,7 +113,6 @@ export function registerTaskBoardPanel(ctx: ClientContext, controller: BoardCont
   }, TaskBoardPanel as never)))
 
   return () => {
-    releaseCoordination()
     for (const dispose of disposers.splice(0)) dispose()
   }
 }

@@ -27,13 +27,13 @@ test('copies cover the settings trio for all consumers plus host and http helper
   // bucket holds is the package-root test setup (5 today) plus the per-package
   // http.ts and console-output.ts copies. The settings bucket is the card trio
   // plus the entry-bound form fallback, the latter one per package whose card
-  // binds a family namespace (6 today). The task board and the skill center
-  // left the DOM-level family cores for the native layout seats, so neither
-  // contributes a body-mutations / sidebar-entry-core / panel-mount-core copy
-  // here; ssh is now the only consumer of the last two.
-  assert.equal(entries.length, 102)
+  // binds a family namespace (6 today). Every family panel now renders through
+  // the native layout seats, so the panel-mount-core and sidebar-entry-core
+  // copies are gone and body-mutations serves only the aggregate shell and the
+  // usage card.
+  assert.equal(entries.length, 99)
   const clientTrio = entries.filter(entry => entry.target.includes('/src/client/'))
-  assert.equal(clientTrio.length, 42)
+  assert.equal(clientTrio.length, 39)
   const hostCopies = entries.filter(entry => entry.target.includes('/src/host/')
     || entry.target.includes('/src/dsh-home.ts')
     || entry.target.includes('/src/mount-once.ts')
@@ -57,8 +57,6 @@ test('checkSync detects drift and applySync repairs it', async () => {
     await writeFile(join(sourceDir, 'settings-entry-form.ts'), 'export const entry = 1' + String.fromCharCode(10))
     await writeFile(join(root, 'shared', 'client', 'telemetry.ts'), 'export const beat = 1' + String.fromCharCode(10))
     await writeFile(join(root, 'shared', 'client', 'sse-leader.ts'), 'export const leader = 1' + String.fromCharCode(10))
-    await writeFile(join(root, 'shared', 'client', 'sidebar-entry-core.ts'), 'export const sidecore = 1' + String.fromCharCode(10))
-    await writeFile(join(root, 'shared', 'client', 'panel-mount-core.ts'), 'export const panelcore = 1' + String.fromCharCode(10))
     await writeFile(join(root, 'shared', 'client', 'body-mutations.ts'), 'export const hub = 1' + String.fromCharCode(10))
     await writeFile(join(root, 'shared', 'client', 'main-session.ts'), 'export const main = 1' + String.fromCharCode(10))
     const hostDir = join(root, 'shared', 'host')

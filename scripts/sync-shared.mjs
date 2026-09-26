@@ -225,16 +225,8 @@ const MANIFEST = [
     file: 'body-mutations.ts',
     source: 'shared/client/body-mutations.ts',
     targets: [
-      'packages/dsh-ssh/src/client/body-mutations.ts',
       'packages/dsh-web-all/src/client/body-mutations.ts',
       'packages/dsh-usage/src/client/body-mutations.ts',
-    ],
-  },
-  {
-    file: 'sidebar-entry-core.ts',
-    source: 'shared/client/sidebar-entry-core.ts',
-    targets: [
-      'packages/dsh-ssh/src/client/sidebar-entry-core.ts',
     ],
   },
   {
@@ -246,18 +238,6 @@ const MANIFEST = [
     targets: [
       'packages/dsh-plugin-manager/src/host/console-output.ts',
       'packages/dsh-update/src/console-output.ts',
-    ],
-  },
-  {
-    // Center-column takeover lifecycle for the one family panel that still
-    // mounts at the DOM level (ssh); the wrapper supplies the panel tree,
-    // container attribute names, and CSS class (pinned by the package's CSS
-    // and the semantic-attrs contract). The task board and the skill center
-    // left this core for the native layout seats, so they have no copy here.
-    file: 'panel-mount-core.ts',
-    source: 'shared/client/panel-mount-core.ts',
-    targets: [
-      'packages/dsh-ssh/src/client/panel-mount-core.ts',
     ],
   },
 ]
