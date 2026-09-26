@@ -1,5 +1,5 @@
 # Bilingual-pair consistency record (docs/i18n.md): the git blob hash of each
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with git hash-object.
-2026-09-02-panel-mount-core-extraction.md: b1b95de14c0bfa2105f4381856bd6b6b7c23cea2
-2026-09-02-panel-mount-core-extraction.zh.md: 8a5451d0d32a6d1025140439bc9bb1ae193cc3e1
+2026-09-02-panel-mount-core-extraction.md: 2b030a6db272a919fe3bfb7f86c50809cdb88766
+2026-09-02-panel-mount-core-extraction.zh.md: 017734f8dc5eb1f288bd97b5681b1aa0669ecb89
