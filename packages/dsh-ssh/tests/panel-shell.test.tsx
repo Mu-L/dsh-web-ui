@@ -35,12 +35,9 @@ function fakeApi(): SshApi {
   } as unknown as SshApi
 }
 
+/** The real controller: the panel reads its tab and session state from it. */
 function fakeController(): PanelController {
-  return {
-    getSnapshot: () => ({ panelOpen: false }),
-    subscribe: () => () => {},
-    close: () => {},
-  } as unknown as PanelController
+  return new PanelController()
 }
 
 describe('SshPanel L2 semantic attributes (#506)', () => {

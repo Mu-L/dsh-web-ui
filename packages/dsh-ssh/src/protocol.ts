@@ -188,7 +188,8 @@ export interface ApiErrorBody {
 
 /** WebSocket terminal protocol frames (host -> client and client -> host). */
 export type TerminalServerFrame =
-  | { type: 'ready'; alias: string }
+  /** The shell is up; `sessionId` reattaches to it after a view detach. */
+  | { type: 'ready'; alias: string; sessionId: string }
   | { type: 'output'; data: string }
   | { type: 'exit'; code: number | null; error?: string }
   | {
@@ -202,6 +203,10 @@ export type TerminalClientFrame =
   | { type: 'input'; data: string }
   | { type: 'resize'; cols: number; rows: number }
   | { type: 'auth_response'; responses: string[] }
+  /** Leave the socket while the host keeps the shell alive for a reattach. */
+  | { type: 'detach' }
+  /** End the session outright (the view's disconnect control). */
+  | { type: 'close' }
 
 /** Route paths the client calls (shared literals). */
 export const SSH_API_BASE = '/api/dsh-ssh' as const
