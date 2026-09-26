@@ -11,133 +11,17 @@
  * button-primary-fill + label-primary-foreground, the matched pair the theme
  * flips so the label always contrasts with the fill.
  *
- * The center-column hide rules are attribute-scoped and must stay in this
- * stylesheet (it is imported by mount.tsx and the sidebar entry, so the styles
- * load with the plugin).
+ * The panel is a native main-slot page: the shell renders it only while this
+ * panel is selected, so this file carries no visibility rule and no rule over
+ * the conversation column, and the sidebar row is the shell's own panel row,
+ * so there is no injected entry row to style either.
  */
-
-/* --- center-column takeover (global rules, attribute-scoped) ----------------- */
-
-[data-pane='conversation'],
-[class*='centerCol'] {
-  position: relative;
-}
-
-/* The panel container rides inside the conversation grid item as an extra
-   trailing child; hidden unless the panel is active. */
-[data-dsh-skill-explorer-view] {
-  position: absolute;
-  inset: 0;
-  display: none;
-  /* Above the conversation composer so the panel paints over the input card. */
-  z-index: 60;
-  /* Opaque backdrop: the conversation subtree stays mounted under the panel. */
-  background: var(--dsw-alias-bg-base);
-}
-
-/* The center column is single-occupant. The family table in
-   panel-mount-core.ts already clears the other panels' attributes, so these
-   guards only decide a tie if two attributes ever coexist; the skill center
-   yields to the other two panels. */
-html[data-dsh-skill-explorer-active]:not([data-dsh-ssh-active]):not([data-dsh-taskboard-active]) [data-dsh-skill-explorer-view] {
-  display: block;
-}
-
-/* While the panel is active, the conversation content underneath is hidden
-   (it stays mounted and stateful). */
-html[data-dsh-skill-explorer-active]:not([data-dsh-ssh-active]):not([data-dsh-taskboard-active]) [data-pane='conversation'] > :not([data-dsh-skill-explorer-view]),
-html[data-dsh-skill-explorer-active]:not([data-dsh-ssh-active]):not([data-dsh-taskboard-active]) [class*='centerCol'] > :not([data-dsh-skill-explorer-view]) {
-  display: none !important;
-}
-
-/* --- sidebar entry row ------------------------------------------------------- */
-
-/* Same geometry as the shell's own panel rows (SidebarRoot .panelRow): 2px
-   inset with a 12px radius, 8px content padding, 36px row, 14/22 type, and the
-   primary ink — so an injected row and an official row line up column for
-   column instead of each carrying its own box. */
-.entry {
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 36px;
-  padding: 7px 8px;
-  margin: 0 2px;
-  background: transparent;
-  border: none;
-  border-radius: 12px;
-  color: var(--dsw-alias-label-primary);
-  cursor: pointer;
-  font: inherit;
-  font-size: 14px;
-  line-height: 22px;
-  text-align: left;
-  white-space: nowrap;
-}
-
-.entry:hover {
-  background: var(--dsw-alias-interactive-bg-hover);
-  color: var(--dsw-alias-label-primary);
-}
-
-.entry[data-active] {
-  background: var(--dsw-alias-interactive-bg-active);
-  color: var(--dsw-alias-label-primary);
-  font-weight: 600;
-}
-
-/* Icon box matches the shell's panel glyph exactly (16px), so the glyph column
-   and the label column land on the official rows' x positions. */
-.entryIcon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  flex: none;
-}
-
-.entryIcon svg {
-  display: block;
-  width: 16px;
-  height: 16px;
-}
-
-.entryLabel {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Collapsed rail: icon-only, centered, matching the shell's 56px rail. The
-   shell asks its own panel rows for an 18px glyph on the rail, so the icon box
-   and the svg step up together with the 12px rail radius. */
-:global([data-dsh-frame][data-sidebar-collapsed]) .entry,
-:global([data-sidebar-collapsed]) .entry {
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  padding: 0;
-  margin: 0 auto 12px;
-  border-radius: 12px;
-}
-
-:global([data-dsh-frame][data-sidebar-collapsed]) .entryIcon,
-:global([data-sidebar-collapsed]) .entryIcon,
-:global([data-dsh-frame][data-sidebar-collapsed]) .entryIcon svg,
-:global([data-sidebar-collapsed]) .entryIcon svg {
-  width: 18px;
-  height: 18px;
-}
-
-:global([data-dsh-frame][data-sidebar-collapsed]) .entryLabel,
-:global([data-sidebar-collapsed]) .entryLabel {
-  display: none;
-}
 
 /* --- panel frame -------------------------------------------------------------- */
 
 .view {
+  height: 100%;
+  min-height: 0;
   overflow: hidden;
 }
 

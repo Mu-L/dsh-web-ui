@@ -1,30 +1,28 @@
 /**
  * The skill center panel shell: a header with the back-to-conversation
- * control, a tab bar, and the active tab's content. Tab state lives here
- * (browser session state); the inactive tab unmounts, so the tab that needs
- * the workspace resolves it itself and the list refetches when it returns.
+ * control, a tab bar, and the active tab's content.
+ *
+ * The tab and the editor target live in the controller, not in component
+ * state: the layout mounts this page only while the panel is selected, so
+ * local state would drop the open tab and any in-progress edit on every panel
+ * switch. The inactive tab unmounts, so the tab that needs the workspace
+ * resolves it itself and the list refetches when it returns.
  *
  * The edit tab appears only while a skill is being edited: the list row hands
  * the chosen skill over, and leaving the editor returns to the list.
- *
- * The panel occupies the center column while the controller reports it open
- * (see mount.tsx); the conversation subtree underneath stays mounted.
  */
-import { useState } from 'react'
-import { SkillApi, type SkillEntry } from '../api.ts'
+import { useSyncExternalStore } from 'react'
+import { SkillApi } from '../api.ts'
 import { tt } from '../panel-helpers.ts'
-import type { PanelController } from './controller.ts'
+import type { PanelController, SkillTab } from './controller.ts'
 import { CreateTab } from './CreateTab.tsx'
 import { EditTab } from './EditTab.tsx'
 import { SkillsTab } from './SkillsTab.tsx'
 import css from './panel.module.css'
 
-/** The panel's tab identifiers. */
-export type SkillTab = 'skills' | 'create' | 'edit'
-
 /** Panel shell props. */
 export interface SkillPanelProps {
-  /** The panel state owner (open/close/toggle). */
+  /** The panel state owner (open/close/toggle, active tab, editor target). */
   controller: PanelController
   /** The skill center API client every tab operates through. */
   api: SkillApi
@@ -32,20 +30,10 @@ export interface SkillPanelProps {
 
 /** The skill center panel. */
 export function SkillPanel({ controller, api }: SkillPanelProps) {
-  const [activeTab, setActiveTab] = useState<SkillTab>('skills')
-  const [editing, setEditing] = useState<SkillEntry | undefined>(undefined)
-
-  /** Open the editor for one row; the edit tab appears while it is set. */
-  const openEditor = (skill: SkillEntry): void => {
-    setEditing(skill)
-    setActiveTab('edit')
-  }
-
-  /** Leave the editor; the list remounts and refetches the saved copy. */
-  const closeEditor = (): void => {
-    setEditing(undefined)
-    setActiveTab('skills')
-  }
+  const { activeTab, editing } = useSyncExternalStore(
+    (listener) => controller.subscribe(listener),
+    () => controller.getSnapshot(),
+  )
 
   const tabs: ReadonlyArray<{ id: SkillTab; label: () => string }> = [
     { id: 'skills', label: () => tt('tab.list') },
@@ -79,17 +67,22 @@ export function SkillPanel({ controller, api }: SkillPanelProps) {
             data-active={activeTab === tab.id ? '' : undefined}
             data-dsh-part="tab"
             className={css.tab}
-            onClick={() => { setActiveTab(tab.id) }}
+            onClick={() => { controller.setActiveTab(tab.id) }}
           >
             {tab.label()}
           </button>
         ))}
       </div>
       <div className={css.panelContent}>
-        {activeTab === 'skills' && <SkillsTab api={api} onEdit={openEditor} />}
+        {activeTab === 'skills' && <SkillsTab api={api} onEdit={skill => { controller.openEditor(skill) }} />}
         {activeTab === 'create' && <CreateTab api={api} />}
         {activeTab === 'edit' && editing !== undefined && (
-          <EditTab api={api} skill={editing} onDone={closeEditor} onCancel={closeEditor} />
+          <EditTab
+            api={api}
+            skill={editing}
+            onDone={() => { controller.closeEditor() }}
+            onCancel={() => { controller.closeEditor() }}
+          />
         )}
       </div>
     </div>

@@ -226,7 +226,6 @@ const MANIFEST = [
     source: 'shared/client/body-mutations.ts',
     targets: [
       'packages/dsh-ssh/src/client/body-mutations.ts',
-      'packages/dsh-skill-explorer/src/client/body-mutations.ts',
       'packages/dsh-web-all/src/client/body-mutations.ts',
       'packages/dsh-usage/src/client/body-mutations.ts',
     ],
@@ -236,7 +235,6 @@ const MANIFEST = [
     source: 'shared/client/sidebar-entry-core.ts',
     targets: [
       'packages/dsh-ssh/src/client/sidebar-entry-core.ts',
-      'packages/dsh-skill-explorer/src/client/sidebar-entry-core.ts',
     ],
   },
   {
@@ -251,16 +249,15 @@ const MANIFEST = [
     ],
   },
   {
-    // Center-column takeover lifecycle shared by the DOM-level family panels
-    // (ssh and the skill center); the wrappers supply the panel tree,
-    // container attribute names, and CSS class (pinned by each package's CSS
-    // and the semantic-attrs contract). The task board left this core for the
-    // native layout seats, so it has no copy here.
+    // Center-column takeover lifecycle for the one family panel that still
+    // mounts at the DOM level (ssh); the wrapper supplies the panel tree,
+    // container attribute names, and CSS class (pinned by the package's CSS
+    // and the semantic-attrs contract). The task board and the skill center
+    // left this core for the native layout seats, so they have no copy here.
     file: 'panel-mount-core.ts',
     source: 'shared/client/panel-mount-core.ts',
     targets: [
       'packages/dsh-ssh/src/client/panel-mount-core.ts',
-      'packages/dsh-skill-explorer/src/client/panel-mount-core.ts',
     ],
   },
 ]

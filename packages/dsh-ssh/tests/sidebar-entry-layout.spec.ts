@@ -4,14 +4,13 @@ import { describe, expect, it } from 'vitest'
 const css = readFileSync(new URL('../src/client/panel/panel.module.css', import.meta.url), 'utf8')
 const source = readFileSync(new URL('../src/client/sidebar-entry.ts', import.meta.url), 'utf8')
 
-// The hand-drawn sidebar entry rows of this repository (ssh, skill explorer)
-// must share one geometry baseline copied from the shell's own panel rows
-// (#1535). The task board used to be the third; it contributes a
-// `sidebar.panellist` row now, so the shell draws its box and there is no
-// geometry of ours left to compare.
-const siblingEntryGaps = [
-  new URL('../../dsh-skill-explorer/src/client/panel/panel.module.css', import.meta.url),
-].map((url) => ({
+// The hand-drawn sidebar entry rows of this repository must share one geometry
+// baseline copied from the shell's own panel rows (#1535). ssh is the last
+// one: the task board and the skill center contribute `sidebar.panellist` rows
+// now, so the shell draws their boxes and there is no other geometry of ours
+// left to compare. Keep this list in step when a row joins or leaves the
+// shell's own panel list.
+const siblingEntryGaps = [].map((url: URL) => ({
   path: url.pathname.split('/packages/')[1] ?? url.pathname,
   gap: readFileSync(url, 'utf8').match(/(?:^|\n)\.entry\s*\{([^}]*)\}/s)?.[1]?.match(/gap:\s*([^;]+);/)?.[1],
 }))

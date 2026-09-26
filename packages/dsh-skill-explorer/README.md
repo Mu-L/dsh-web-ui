@@ -8,9 +8,9 @@ skills into a recoverable trash.
 
 ## What it does
 
-- **Sidebar entry** "Skill Center" opens a center-column panel (the single
-  occupant slot ssh and the task board use) with a tab bar and a back-to-chat
-  control.
+- **Sidebar row** "Skill Center" opens a native center-column page — a row in
+  the shell's own panel list, beside Plugins, Schedule and the task board —
+  with a tab bar and a back-to-chat control.
 - **Skills tab**: skills grouped by source (system bundled / project
   `.dsh/skills` / project `.agents/skills` / custom directories / user
   `~/.dsh/skills` / user `~/.agents/skills` / runtime registered), with a

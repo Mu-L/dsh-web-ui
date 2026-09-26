@@ -27,13 +27,13 @@ test('copies cover the settings trio for all consumers plus host and http helper
   // bucket holds is the package-root test setup (5 today) plus the per-package
   // http.ts and console-output.ts copies. The settings bucket is the card trio
   // plus the entry-bound form fallback, the latter one per package whose card
-  // binds a family namespace (6 today). The task board left the DOM-level
-  // family cores for the native layout seats, so it contributes no
-  // body-mutations / sidebar-entry-core / panel-mount-core copy here (three
-  // fewer client copies than the family's other consumers).
-  assert.equal(entries.length, 105)
+  // binds a family namespace (6 today). The task board and the skill center
+  // left the DOM-level family cores for the native layout seats, so neither
+  // contributes a body-mutations / sidebar-entry-core / panel-mount-core copy
+  // here; ssh is now the only consumer of the last two.
+  assert.equal(entries.length, 102)
   const clientTrio = entries.filter(entry => entry.target.includes('/src/client/'))
-  assert.equal(clientTrio.length, 45)
+  assert.equal(clientTrio.length, 42)
   const hostCopies = entries.filter(entry => entry.target.includes('/src/host/')
     || entry.target.includes('/src/dsh-home.ts')
     || entry.target.includes('/src/mount-once.ts')

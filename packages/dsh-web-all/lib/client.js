@@ -8866,7 +8866,7 @@ window.__ModuleLoader__.load({
 		//#endregion
 		//#region ../dsh-task-board/src/client/native-panel.tsx
 		/** Row order among the shell's global panel rows (Plugins is 0, Schedule 10). */
-		const PANEL_ORDER = 20;
+		const PANEL_ORDER$1 = 20;
 		/**
 		* The sidebar row glyph the shell asks for at its own size and active state.
 		* The shell owns the button, label, tooltip and rail geometry; this component
@@ -8924,9 +8924,9 @@ window.__ModuleLoader__.load({
 		* `shared/client/panel-mount-core.ts`, so the board participates in it rather
 		* than inventing a second mechanism.
 		*/
-		const PANEL_ACTIVATE_EVENT = "dsh-panel-activate";
+		const PANEL_ACTIVATE_EVENT$1 = "dsh-panel-activate";
 		/** This panel's name in the family protocol. */
-		const PANEL_NAME = "taskboard";
+		const PANEL_NAME$1 = "taskboard";
 		/**
 		* The family panels whose activation closes the board, because each one takes
 		* the column over at the DOM level and would otherwise hide this board's page
@@ -8938,7 +8938,7 @@ window.__ModuleLoader__.load({
 		* it left the takeover). Keep this list in step when a family panel joins or
 		* leaves the DOM takeover.
 		*/
-		const TAKEOVER_PANEL_NAMES = ["ssh", "skill-explorer"];
+		const TAKEOVER_PANEL_NAMES$1 = ["ssh", "skill-explorer"];
 		/**
 		* Keep the board mutually exclusive with the DOM-takeover family panels.
 		*
@@ -8953,18 +8953,18 @@ window.__ModuleLoader__.load({
 		function coordinateWithFamilyPanels(controller) {
 			let open = controller.getSnapshot().boardOpen;
 			const onActivate = (event) => {
-				if (!TAKEOVER_PANEL_NAMES.includes(event.detail)) return;
+				if (!TAKEOVER_PANEL_NAMES$1.includes(event.detail)) return;
 				if (controller.getSnapshot().boardOpen) controller.closeBoard();
 			};
 			const unsubscribe = controller.subscribe(() => {
 				const next = controller.getSnapshot().boardOpen;
 				if (next === open) return;
 				open = next;
-				if (next) document.dispatchEvent(new CustomEvent(PANEL_ACTIVATE_EVENT, { detail: PANEL_NAME }));
+				if (next) document.dispatchEvent(new CustomEvent(PANEL_ACTIVATE_EVENT$1, { detail: PANEL_NAME$1 }));
 			});
-			document.addEventListener(PANEL_ACTIVATE_EVENT, onActivate);
+			document.addEventListener(PANEL_ACTIVATE_EVENT$1, onActivate);
 			return () => {
-				document.removeEventListener(PANEL_ACTIVATE_EVENT, onActivate);
+				document.removeEventListener(PANEL_ACTIVATE_EVENT$1, onActivate);
 				unsubscribe();
 			};
 		}
@@ -8986,7 +8986,7 @@ window.__ModuleLoader__.load({
 			disposers.push(slots.inject("sidebar.panellist", () => slots.register({
 				name: "sidebar.panellist",
 				id: TASK_BOARD_PANEL_ID,
-				order: PANEL_ORDER,
+				order: PANEL_ORDER$1,
 				label: () => t$4("entry.label")
 			}, TaskBoardPanelIcon)));
 			disposers.push(slots.inject("main", () => slots.register({
@@ -34890,10 +34890,10 @@ window.__ModuleLoader__.load({
 		//#endregion
 		//#region ../dsh-ssh/src/client/body-mutations.ts
 		/** Cross-bundle registry key; `Symbol.for` so every module copy agrees. */
-		const HUB_KEY$3 = Symbol.for("dsh-web.body-mutation-hub");
-		const INVALIDATION_ONLY$3 = Symbol.for("dsh-web.body-mutation-invalidation");
-		function needsRecords$3(subscribers) {
-			for (const listener of subscribers) if (!listener[INVALIDATION_ONLY$3]) return true;
+		const HUB_KEY$2 = Symbol.for("dsh-web.body-mutation-hub");
+		const INVALIDATION_ONLY$2 = Symbol.for("dsh-web.body-mutation-invalidation");
+		function needsRecords$2(subscribers) {
+			for (const listener of subscribers) if (!listener[INVALIDATION_ONLY$2]) return true;
 			return false;
 		}
 		/**
@@ -34901,12 +34901,12 @@ window.__ModuleLoader__.load({
 		* The marked wrapper also works with an older hub, which delivers records
 		* that it simply ignores until a page reload picks up the updated hub.
 		*/
-		function subscribeBodyInvalidations$3(subscriber) {
+		function subscribeBodyInvalidations$2(subscriber) {
 			const listener = () => {
 				subscriber();
 			};
-			listener[INVALIDATION_ONLY$3] = true;
-			return subscribeBodyMutations$3(listener);
+			listener[INVALIDATION_ONLY$2] = true;
+			return subscribeBodyMutations$2(listener);
 		}
 		/**
 		* Subscribe to body-level childList mutations.
@@ -34915,11 +34915,11 @@ window.__ModuleLoader__.load({
 		* @returns the disposer removing this subscriber (and the observer when it was
 		*   the last one).
 		*/
-		function subscribeBodyMutations$3(subscriber) {
+		function subscribeBodyMutations$2(subscriber) {
 			if (typeof globalThis === "undefined" || typeof document === "undefined") return () => {};
 			if (typeof MutationObserver !== "function") return () => {};
 			const registry = globalThis;
-			let hub = registry[HUB_KEY$3];
+			let hub = registry[HUB_KEY$2];
 			if (hub === void 0) {
 				const subscribers = /* @__PURE__ */ new Set();
 				const created = {
@@ -34947,14 +34947,14 @@ window.__ModuleLoader__.load({
 					else flush();
 				};
 				created.observer = new MutationObserver((records) => {
-					if (needsRecords$3(subscribers)) for (const record of records) created.pending.push(record);
+					if (needsRecords$2(subscribers)) for (const record of records) created.pending.push(record);
 					schedule();
 				});
 				created.observer.observe(document.body ?? document.documentElement, {
 					childList: true,
 					subtree: true
 				});
-				registry[HUB_KEY$3] = created;
+				registry[HUB_KEY$2] = created;
 				hub = created;
 			}
 			const active = hub;
@@ -34964,14 +34964,14 @@ window.__ModuleLoader__.load({
 				if (!subscribed) return;
 				subscribed = false;
 				active.subscribers.delete(subscriber);
-				if (!needsRecords$3(active.subscribers)) active.pending = [];
-				if (active.subscribers.size === 0 && registry[HUB_KEY$3] === active) {
+				if (!needsRecords$2(active.subscribers)) active.pending = [];
+				if (active.subscribers.size === 0 && registry[HUB_KEY$2] === active) {
 					active.observer.disconnect();
 					if (active.frame !== void 0 && typeof cancelAnimationFrame === "function") cancelAnimationFrame(active.frame);
 					active.frame = void 0;
 					active.pending = [];
 					active.scheduled = false;
-					delete registry[HUB_KEY$3];
+					delete registry[HUB_KEY$2];
 				}
 			};
 		}
@@ -35021,7 +35021,7 @@ window.__ModuleLoader__.load({
 		* its sidebar row needed a second click to reopen. Adding a family panel is
 		* one row here, not N pairwise options.
 		*/
-		const PANEL_FAMILY$1 = [
+		const PANEL_FAMILY = [
 			{
 				panel: "taskboard",
 				activeAttribute: "data-dsh-taskboard-active"
@@ -35035,20 +35035,20 @@ window.__ModuleLoader__.load({
 				activeAttribute: "data-dsh-skill-explorer-active"
 			}
 		];
-		const CONVERSATION_COLUMN_SELECTOR$1 = "[data-pane=\"conversation\"], [class*=\"centerCol\"]";
+		const CONVERSATION_COLUMN_SELECTOR = "[data-pane=\"conversation\"], [class*=\"centerCol\"]";
 		/** Cross-plugin activation event; detail is the activating panel name. */
-		const ACTIVATE_EVENT$1 = "dsh-panel-activate";
-		const SIDEBAR_ROW_SELECTOR$1 = "[class*=\"sessionRow\"], [class*=\"projectRow\"], [class*=\"searchResultRow\"], [class*=\"searchResultWorkspace\"], [class*=\"newSession\"]";
+		const ACTIVATE_EVENT = "dsh-panel-activate";
+		const SIDEBAR_ROW_SELECTOR = "[class*=\"sessionRow\"], [class*=\"projectRow\"], [class*=\"searchResultRow\"], [class*=\"searchResultWorkspace\"], [class*=\"newSession\"]";
 		/** Find the center column, or undefined while the frame is not mounted. */
-		function conversationColumn$1() {
-			return document.querySelector(CONVERSATION_COLUMN_SELECTOR$1) ?? void 0;
+		function conversationColumn() {
+			return document.querySelector(CONVERSATION_COLUMN_SELECTOR) ?? void 0;
 		}
 		/**
 		* Mount a family panel into the center column and bind its visibility to the
 		* owning controller's open state.
 		* @returns disposer unmounting the tree and restoring the column.
 		*/
-		function mountCenterPanel$1(options) {
+		function mountCenterPanel(options) {
 			let root;
 			let container;
 			let unsubscribeLocale;
@@ -35065,7 +35065,7 @@ window.__ModuleLoader__.load({
 					container = void 0;
 				}
 				if (container === void 0) {
-					const column = conversationColumn$1();
+					const column = conversationColumn();
 					if (column === void 0) return;
 					container = document.createElement("div");
 					container.dataset[options.viewDatasetKey] = "";
@@ -35077,15 +35077,15 @@ window.__ModuleLoader__.load({
 				root = (0, react_dom_client.createRoot)(container);
 				options.render(root);
 			};
-			const unsubscribeBody = subscribeBodyInvalidations$3(() => {
+			const unsubscribeBody = subscribeBodyInvalidations$2(() => {
 				ensure();
 			});
 			const applyActive = () => {
 				if (options.isOpen()) {
 					ensure();
-					for (const member of PANEL_FAMILY$1) if (member.panel !== options.panelName) document.documentElement.removeAttribute(member.activeAttribute);
+					for (const member of PANEL_FAMILY) if (member.panel !== options.panelName) document.documentElement.removeAttribute(member.activeAttribute);
 					document.documentElement.setAttribute(options.activeAttribute, "");
-					document.dispatchEvent(new CustomEvent(ACTIVATE_EVENT$1, { detail: options.panelName }));
+					document.dispatchEvent(new CustomEvent(ACTIVATE_EVENT, { detail: options.panelName }));
 				} else document.documentElement.removeAttribute(options.activeAttribute);
 			};
 			const onOtherActivate = (event) => {
@@ -35095,16 +35095,16 @@ window.__ModuleLoader__.load({
 				if (!options.isOpen()) return;
 				const target = event.target;
 				if (target === null) return;
-				if (target.closest(SIDEBAR_ROW_SELECTOR$1) !== null) options.close();
+				if (target.closest(SIDEBAR_ROW_SELECTOR) !== null) options.close();
 			};
 			document.addEventListener("click", onClickSidebarRow, true);
-			document.addEventListener(ACTIVATE_EVENT$1, onOtherActivate);
+			document.addEventListener(ACTIVATE_EVENT, onOtherActivate);
 			const unsubscribe = options.subscribe(applyActive);
 			applyActive();
 			ensure();
 			return () => {
 				document.removeEventListener("click", onClickSidebarRow, true);
-				document.removeEventListener(ACTIVATE_EVENT$1, onOtherActivate);
+				document.removeEventListener(ACTIVATE_EVENT, onOtherActivate);
 				unsubscribeBody();
 				unsubscribe();
 				unsubscribeLocale?.();
@@ -35127,8 +35127,8 @@ window.__ModuleLoader__.load({
 		*   on a Language switch.
 		* @returns disposer unmounting the tree and restoring the column.
 		*/
-		function mountPanel$1(controller, api, terminalFont, locale) {
-			return mountCenterPanel$1({
+		function mountPanel(controller, api, terminalFont, locale) {
+			return mountCenterPanel({
 				render: (root) => root.render(/* @__PURE__ */ (0, react_jsx_runtime.jsx)(SshPanel, {
 					controller,
 					api,
@@ -35298,19 +35298,19 @@ window.__ModuleLoader__.load({
 		* edit the shared source and re-run the sync instead of editing a copy.
 		*/
 		/** Find the sidebar shell root element, or undefined while not yet mounted. */
-		function sidebarRoot$1() {
+		function sidebarRoot() {
 			const column = document.querySelector("[data-pane=\"sidebar\"], [class*=\"sidebarCol\"]");
 			if (column === null) return void 0;
 			return column.querySelector("[class*=\"logoRow\"]")?.parentElement ?? column.firstElementChild;
 		}
 		/** The New Session button: nested in the logo row on current shells, a direct child on legacy shells. */
-		function newSessionButton$1(root) {
+		function newSessionButton(root) {
 			const nested = root.querySelector("button[class*=\"newSession\"]");
 			if (nested !== null) return nested;
 			for (const child of root.children) if (child.tagName === "BUTTON") return child;
 		}
 		/** Build the entry row (detached; inserted once the shell is up). */
-		function createEntry$1(options) {
+		function createEntry(options) {
 			const entry = document.createElement("button");
 			entry.type = "button";
 			entry.setAttribute(options.rowAttribute, "");
@@ -35338,8 +35338,8 @@ window.__ModuleLoader__.load({
 			};
 		}
 		/** Re-insert the entry after the New Session row (before the browser region). */
-		function placeEntry$1(root, entry, options) {
-			const button = newSessionButton$1(root);
+		function placeEntry(root, entry, options) {
+			const button = newSessionButton(root);
 			if (button === void 0) return false;
 			if (entry.parentElement !== root) {
 				const row = button.closest("[class*=\"logoRow\"]");
@@ -35356,9 +35356,9 @@ window.__ModuleLoader__.load({
 		* @param options - the row's attribute/icon/copy/action/ordering configuration.
 		* @returns disposer removing the entry and its observers.
 		*/
-		function mountSidebarEntry$3(options) {
+		function mountSidebarEntry$1(options) {
 			if (typeof document !== "undefined" && document.querySelector(options.rowSelector) !== null) return () => {};
-			const { entry, applyLabel } = createEntry$1(options);
+			const { entry, applyLabel } = createEntry(options);
 			let root;
 			let placed = false;
 			let unsubscribeRefresh;
@@ -35377,15 +35377,15 @@ window.__ModuleLoader__.load({
 					root = void 0;
 					placed = false;
 				}
-				root ??= sidebarRoot$1();
+				root ??= sidebarRoot();
 				if (root === void 0) return;
-				placed = placeEntry$1(root, entry, options);
+				placed = placeEntry(root, entry, options);
 				if (placed) rootObserver.observe(root, {
 					childList: true,
 					subtree: true
 				});
 			};
-			const unsubscribeBody = subscribeBodyInvalidations$3(() => {
+			const unsubscribeBody = subscribeBodyInvalidations$2(() => {
 				tryPlace();
 			});
 			const rootObserver = new MutationObserver(() => {
@@ -35394,7 +35394,7 @@ window.__ModuleLoader__.load({
 					tryPlace();
 					return;
 				}
-				if (!root.contains(entry)) placed = placeEntry$1(root, entry, options);
+				if (!root.contains(entry)) placed = placeEntry(root, entry, options);
 			});
 			const unsubscribeActive = options.active === void 0 ? void 0 : (() => {
 				const syncActive = () => {
@@ -35417,9 +35417,9 @@ window.__ModuleLoader__.load({
 		//#endregion
 		//#region ../dsh-ssh/src/client/sidebar-entry.ts
 		/** Stable data attribute identifying the injected entry row. */
-		const ENTRY_SELECTOR$1 = "[data-dsh-ssh-entry]";
+		const ENTRY_SELECTOR = "[data-dsh-ssh-entry]";
 		/** Inline terminal glyph sized to the shell's panel-row navigation icons. */
-		const ICON$1 = "<svg viewBox=\"0 0 16 16\" width=\"16\" height=\"16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"1.75\" y=\"2.25\" width=\"12.5\" height=\"11.5\" rx=\"1.75\"/><path d=\"M4.25 5.25l2.75 2.75-2.75 2.75\"/><path d=\"M8.5 10.75h3.25\"/></svg>";
+		const ICON = "<svg viewBox=\"0 0 16 16\" width=\"16\" height=\"16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"1.75\" y=\"2.25\" width=\"12.5\" height=\"11.5\" rx=\"1.75\"/><path d=\"M4.25 5.25l2.75 2.75-2.75 2.75\"/><path d=\"M8.5 10.75h3.25\"/></svg>";
 		/**
 		* Mount the sidebar entry, waiting for the shell to render and self-healing
 		* on later React re-renders.
@@ -35428,12 +35428,12 @@ window.__ModuleLoader__.load({
 		*   a Language switch (the plain-DOM row otherwise keeps the mount-time copy).
 		* @returns disposer removing the entry and its observers.
 		*/
-		function mountSidebarEntry$2(controller, locale) {
-			return mountSidebarEntry$3({
+		function mountSidebarEntry(controller, locale) {
+			return mountSidebarEntry$1({
 				rowAttribute: "data-dsh-ssh-entry",
-				rowSelector: ENTRY_SELECTOR$1,
+				rowSelector: ENTRY_SELECTOR,
 				plugin: "ssh",
-				icon: ICON$1,
+				icon: ICON,
 				css: panel_module_css_default$1,
 				label: () => tt$1("entry.label"),
 				tooltip: () => tt$1("entry.tooltip"),
@@ -35574,8 +35574,8 @@ window.__ModuleLoader__.load({
 			}, "dsh-ssh: settings binding");
 			const disposers = [];
 			try {
-				disposers.push(mountSidebarEntry$2(controller, ctx.locale));
-				disposers.push(mountPanel$1(controller, api, terminalFont, ctx.locale));
+				disposers.push(mountSidebarEntry(controller, ctx.locale));
+				disposers.push(mountPanel(controller, api, terminalFont, ctx.locale));
 			} catch (error) {
 				console.warn("[dsh-ssh] mount failed:", error);
 			}
@@ -37774,6 +37774,103 @@ window.__ModuleLoader__.load({
 			}
 		};
 		//#endregion
+		//#region ../dsh-skill-explorer/src/client/panel/controller.ts
+		/** Stable id shared by the sidebar panel row and the main-slot page. */
+		const SKILL_EXPLORER_PANEL_ID = "skill-explorer";
+		/** The panel state owner the sidebar row and the view both read. */
+		var PanelController = class {
+			deps;
+			panelOpen = false;
+			activeTab = "skills";
+			editing;
+			listeners = /* @__PURE__ */ new Set();
+			/** Cached so getSnapshot stays referentially stable between changes. */
+			snapshot = {
+				panelOpen: false,
+				activeTab: "skills",
+				editing: void 0
+			};
+			constructor(deps = {}) {
+				this.deps = deps;
+			}
+			getSnapshot() {
+				return this.snapshot;
+			}
+			subscribe(fn) {
+				this.listeners.add(fn);
+				return () => {
+					this.listeners.delete(fn);
+				};
+			}
+			/**
+			* Show the panel. The layout owns which panel the column renders, so the
+			* state flip and the selection travel together; the selection is requested
+			* after the snapshot flips, so a subscriber never observes "open" while the
+			* shell still shows the conversation.
+			*/
+			open() {
+				if (this.panelOpen) return;
+				this.panelOpen = true;
+				this.commit();
+				this.selectPanel(SKILL_EXPLORER_PANEL_ID);
+			}
+			/** Return the column to the conversation, asking the layout explicitly. */
+			close() {
+				if (!this.panelOpen) return;
+				this.panelOpen = false;
+				this.commit();
+				this.selectPanel(null);
+			}
+			toggle() {
+				if (this.panelOpen) this.close();
+				else this.open();
+			}
+			/**
+			* Reflect a selection made outside this controller (the user clicked another
+			* sidebar row, or the layout dropped the panel id), keeping `panelOpen`
+			* aligned with what the column actually shows.
+			* @param panelId - the layout's current panel id, or null for the conversation.
+			*/
+			syncPanelSelection(panelId) {
+				const open = panelId === SKILL_EXPLORER_PANEL_ID;
+				if (open === this.panelOpen) return;
+				this.panelOpen = open;
+				this.commit();
+			}
+			/** Switch tabs without touching the editor target. */
+			setActiveTab(tab) {
+				if (this.activeTab === tab) return;
+				this.activeTab = tab;
+				this.commit();
+			}
+			/** Open the editor for one row; the edit tab appears while it is set. */
+			openEditor(skill) {
+				this.editing = skill;
+				this.activeTab = "edit";
+				this.commit();
+			}
+			/** Leave the editor; the list remounts and refetches the saved copy. */
+			closeEditor() {
+				this.editing = void 0;
+				this.activeTab = "skills";
+				this.commit();
+			}
+			commit() {
+				this.snapshot = {
+					panelOpen: this.panelOpen,
+					activeTab: this.activeTab,
+					editing: this.editing
+				};
+				for (const fn of [...this.listeners]) fn();
+			}
+			/** Ask the layout to select a panel; a shell without the face is a no-op. */
+			selectPanel(panelId) {
+				try {
+					this.deps.panel?.select(panelId);
+				} catch {}
+			}
+		};
+		//#endregion
 		//#region ../dsh-skill-explorer/src/client/locales.ts
 		/**
 		* skill-explorer surface copy: zh is the key source, en mirrors every key.
@@ -37952,7 +38049,7 @@ window.__ModuleLoader__.load({
 		}
 		//#endregion
 		//#region \0dsh-css:packages/dsh-skill-explorer/src/client/panel/panel.module.css.mjs
-		const css$3 = "[data-pane=conversation],[class*=centerCol]{position:relative}[data-dsh-skill-explorer-view]{z-index:60;background:var(--dsw-alias-bg-base);display:none;position:absolute;inset:0}html[data-dsh-skill-explorer-active]:not([data-dsh-ssh-active]):not([data-dsh-taskboard-active]) [data-dsh-skill-explorer-view]{display:block}html[data-dsh-skill-explorer-active]:not([data-dsh-ssh-active]):not([data-dsh-taskboard-active]) [data-pane=conversation]>:not([data-dsh-skill-explorer-view]),html[data-dsh-skill-explorer-active]:not([data-dsh-ssh-active]):not([data-dsh-taskboard-active]) [class*=centerCol]>:not([data-dsh-skill-explorer-view]){display:none!important}.ptK59a_entry{box-sizing:border-box;min-height:36px;color:var(--dsw-alias-label-primary);cursor:pointer;font:inherit;text-align:left;white-space:nowrap;background:0 0;border:none;border-radius:12px;align-items:center;gap:8px;margin:0 2px;padding:7px 8px;font-size:14px;line-height:22px;display:flex}.ptK59a_entry:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.ptK59a_entry[data-active]{background:var(--dsw-alias-interactive-bg-active);color:var(--dsw-alias-label-primary);font-weight:600}.ptK59a_entryIcon{flex:none;justify-content:center;align-items:center;width:16px;height:16px;display:inline-flex}.ptK59a_entryIcon svg{width:16px;height:16px;display:block}.ptK59a_entryLabel{text-overflow:ellipsis;overflow:hidden}[data-dsh-frame][data-sidebar-collapsed] .ptK59a_entry,[data-sidebar-collapsed] .ptK59a_entry{border-radius:12px;justify-content:center;width:36px;height:36px;margin:0 auto 12px;padding:0}[data-dsh-frame][data-sidebar-collapsed] .ptK59a_entryIcon,[data-sidebar-collapsed] .ptK59a_entryIcon,[data-dsh-frame][data-sidebar-collapsed] .ptK59a_entryIcon svg,[data-sidebar-collapsed] .ptK59a_entryIcon svg{width:18px;height:18px}[data-dsh-frame][data-sidebar-collapsed] .ptK59a_entryLabel,[data-sidebar-collapsed] .ptK59a_entryLabel{display:none}.ptK59a_view{overflow:hidden}.ptK59a_panel{background:var(--dsw-alias-bg-base);min-width:0;height:100%;min-height:0;color:var(--dsw-alias-label-primary);font-family:var(--dsw-font-family);flex-direction:column;gap:10px;padding:14px 16px 16px;display:flex}.ptK59a_panelHeader{flex:none;align-items:center;gap:10px;display:flex}.ptK59a_panelTitle{color:var(--dsw-alias-label-primary);white-space:nowrap;flex:1;margin:0;font-size:16px;font-weight:700}.ptK59a_backButton{align-items:center;gap:4px;display:inline-flex}.ptK59a_tabBar{border-bottom:1px solid var(--dsw-alias-border-l1);flex:none;gap:2px;display:flex}.ptK59a_tab{color:var(--dsw-alias-label-secondary);cursor:pointer;white-space:nowrap;background:0 0;border:none;border-bottom:2px solid #0000;border-radius:6px 6px 0 0;padding:7px 14px;font-size:13px}.ptK59a_tab:hover{color:var(--dsw-alias-label-primary);background:var(--dsw-alias-interactive-bg-hover)}.ptK59a_tab[data-active]{color:var(--dsw-alias-label-primary);border-bottom-color:var(--dsw-alias-state-business-primary);font-weight:600}.ptK59a_panelContent{flex-direction:column;flex:1;min-height:0;display:flex;overflow:hidden}.ptK59a_fillBody{flex-direction:column;flex:1;gap:10px;min-height:0;display:flex;overflow:hidden}.ptK59a_tabBody{flex-direction:column;flex:1;gap:10px;min-height:0;display:flex;overflow-y:auto}.ptK59a_toolbar{flex-wrap:wrap;flex:none;align-items:center;gap:8px;display:flex}.ptK59a_search{min-width:120px;color:var(--dsw-alias-label-primary);background:var(--dsw-specific-input-major);border:1px solid var(--dsw-alias-border-l2);border-radius:8px;outline:none;flex:0 260px;padding:6px 10px;font-size:13px}.ptK59a_search::placeholder{color:var(--dsw-alias-label-tertiary)}.ptK59a_select{color:var(--dsw-alias-label-primary);background:var(--dsw-specific-input-major);border:1px solid var(--dsw-alias-border-l2);border-radius:8px;outline:none;padding:6px 8px;font-size:13px}.ptK59a_toolbarSpacer{flex:1}.ptK59a_checkboxLabel{color:var(--dsw-alias-label-secondary);cursor:pointer;align-items:center;gap:6px;font-size:12px;display:inline-flex}.ptK59a_ghostButton{color:var(--dsw-alias-label-primary);border:1px solid var(--dsw-alias-border-l2);cursor:pointer;white-space:nowrap;background:0 0;border-radius:8px;padding:5px 12px;font-size:12px}.ptK59a_ghostButton:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}.ptK59a_ghostButton:disabled{opacity:.45;cursor:default}.ptK59a_formActions{align-items:center;gap:8px;display:flex}.ptK59a_primaryButton{color:var(--dsw-alias-label-primary-foreground);background:var(--dsw-alias-button-primary-fill);cursor:pointer;white-space:nowrap;border:none;border-radius:8px;align-self:flex-start;padding:6px 14px;font-size:13px;font-weight:600}.ptK59a_primaryButton:hover:not(:disabled){background:var(--dsw-alias-button-primary-hover)}.ptK59a_primaryButton:disabled{opacity:.5;cursor:default}.ptK59a_linkButton{color:var(--dsw-alias-state-business-primary);cursor:pointer;white-space:nowrap;background:0 0;border:none;padding:0;font-size:12px}.ptK59a_linkButton:hover:not(:disabled){text-decoration:underline}.ptK59a_linkButton:disabled{opacity:.45;cursor:default}.ptK59a_linkButton[data-danger]{color:var(--dsw-alias-state-error-primary)}.ptK59a_banner{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);overflow-wrap:anywhere;border-radius:8px;padding:8px 12px;font-size:12.5px;line-height:1.5}.ptK59a_banner[data-kind=ok]{color:var(--dsw-alias-state-success-primary);border-color:var(--dsw-alias-state-success-primary)}.ptK59a_banner[data-kind=error]{color:var(--dsw-alias-state-error-primary);border-color:var(--dsw-alias-state-error-primary)}.ptK59a_empty{text-align:center;color:var(--dsw-alias-label-tertiary);padding:28px 12px;font-size:12.5px}.ptK59a_list{border:1px solid var(--dsw-alias-border-l1);border-radius:10px;flex-direction:column;flex:1;gap:14px;min-height:0;padding:8px 12px 10px;display:flex;overflow-y:auto}.ptK59a_group{flex-direction:column;gap:6px;display:flex}.ptK59a_groupTitle{color:var(--dsw-alias-label-primary);margin:0;font-size:13px;font-weight:600}.ptK59a_count{color:var(--dsw-alias-label-secondary);margin-left:6px;font-weight:400}.ptK59a_groupHint{color:var(--dsw-alias-label-secondary);margin:0;font-size:11px}.ptK59a_skillRow{border-bottom:1px solid var(--dsw-alias-border-l1);padding:8px 0}.ptK59a_skillRow:last-child{border-bottom:none}.ptK59a_skillRow:hover{background:var(--dsw-alias-interactive-bg-hover)}.ptK59a_skillHeader{flex-wrap:wrap;align-items:center;gap:8px;display:flex}.ptK59a_skillName{color:var(--dsw-alias-label-primary);font-size:13px;font-weight:600;font-family:var(--ds-font-family-code)}.ptK59a_badge{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);white-space:nowrap;border-radius:999px;padding:1px 8px;font-size:11px;line-height:1.6;display:inline-block}.ptK59a_badgeWorkspace{color:var(--dsw-alias-label-secondary)}.ptK59a_badgeInvokable{color:var(--dsw-alias-state-success-primary);border-color:var(--dsw-alias-state-success-primary)}.ptK59a_badgeIsolated{color:var(--dsw-alias-state-warn-primary);border-color:var(--dsw-alias-state-warn-primary)}.ptK59a_skillIsolated{opacity:.76}.ptK59a_skillIsolated:hover{opacity:.98}.ptK59a_switch{cursor:pointer;background:0 0;border:none;border-radius:99px;align-items:center;margin-left:auto;padding:2px;display:inline-flex}.ptK59a_switch:disabled{opacity:.45;cursor:default}.ptK59a_switchTrack{background:var(--dsw-alias-border-l2);border-radius:99px;flex:none;width:30px;height:16px;transition:background .18s;position:relative}.ptK59a_switchThumb{background:var(--dsw-alias-bg-base);border-radius:50%;width:12px;height:12px;transition:left .18s;position:absolute;top:2px;left:2px}.ptK59a_switch[aria-checked=true] .ptK59a_switchTrack{background:var(--dsw-alias-state-success-primary)}.ptK59a_switch[aria-checked=true] .ptK59a_switchThumb{left:16px}.ptK59a_deleteButton{margin-left:4px}.ptK59a_skillDesc{color:var(--dsw-alias-label-primary);margin:6px 0 0;font-size:12px;line-height:1.5}.ptK59a_skillWhen{color:var(--dsw-alias-label-secondary);margin:4px 0 0;font-size:11px}.ptK59a_skillPath{color:var(--dsw-alias-label-tertiary);font-size:10px;font-family:var(--ds-font-family-code);word-break:break-all;margin:6px 0 0}.ptK59a_form{flex-direction:column;gap:10px;max-width:640px;display:flex}.ptK59a_field{flex-direction:column;gap:5px;display:flex}.ptK59a_fieldLabel{color:var(--dsw-alias-label-secondary);font-size:12px;font-weight:600}.ptK59a_input{color:var(--dsw-alias-label-primary);background:var(--dsw-specific-input-major);border:1px solid var(--dsw-alias-border-l2);resize:vertical;border-radius:8px;outline:none;padding:7px 10px;font-family:inherit;font-size:13px}.ptK59a_input:focus{border-color:var(--dsw-alias-state-business-primary)}.ptK59a_input::placeholder{color:var(--dsw-alias-label-tertiary)}.ptK59a_input:disabled{opacity:.55}.ptK59a_textarea{min-height:140px;font-family:var(--ds-font-family-code)}.ptK59a_note{color:var(--dsw-alias-label-tertiary);margin:0;font-size:11px;line-height:1.7}";
+		const css$3 = ".ptK59a_view{height:100%;min-height:0;overflow:hidden}.ptK59a_panel{background:var(--dsw-alias-bg-base);min-width:0;height:100%;min-height:0;color:var(--dsw-alias-label-primary);font-family:var(--dsw-font-family);flex-direction:column;gap:10px;padding:14px 16px 16px;display:flex}.ptK59a_panelHeader{flex:none;align-items:center;gap:10px;display:flex}.ptK59a_panelTitle{color:var(--dsw-alias-label-primary);white-space:nowrap;flex:1;margin:0;font-size:16px;font-weight:700}.ptK59a_backButton{align-items:center;gap:4px;display:inline-flex}.ptK59a_tabBar{border-bottom:1px solid var(--dsw-alias-border-l1);flex:none;gap:2px;display:flex}.ptK59a_tab{color:var(--dsw-alias-label-secondary);cursor:pointer;white-space:nowrap;background:0 0;border:none;border-bottom:2px solid #0000;border-radius:6px 6px 0 0;padding:7px 14px;font-size:13px}.ptK59a_tab:hover{color:var(--dsw-alias-label-primary);background:var(--dsw-alias-interactive-bg-hover)}.ptK59a_tab[data-active]{color:var(--dsw-alias-label-primary);border-bottom-color:var(--dsw-alias-state-business-primary);font-weight:600}.ptK59a_panelContent{flex-direction:column;flex:1;min-height:0;display:flex;overflow:hidden}.ptK59a_fillBody{flex-direction:column;flex:1;gap:10px;min-height:0;display:flex;overflow:hidden}.ptK59a_tabBody{flex-direction:column;flex:1;gap:10px;min-height:0;display:flex;overflow-y:auto}.ptK59a_toolbar{flex-wrap:wrap;flex:none;align-items:center;gap:8px;display:flex}.ptK59a_search{min-width:120px;color:var(--dsw-alias-label-primary);background:var(--dsw-specific-input-major);border:1px solid var(--dsw-alias-border-l2);border-radius:8px;outline:none;flex:0 260px;padding:6px 10px;font-size:13px}.ptK59a_search::placeholder{color:var(--dsw-alias-label-tertiary)}.ptK59a_select{color:var(--dsw-alias-label-primary);background:var(--dsw-specific-input-major);border:1px solid var(--dsw-alias-border-l2);border-radius:8px;outline:none;padding:6px 8px;font-size:13px}.ptK59a_toolbarSpacer{flex:1}.ptK59a_checkboxLabel{color:var(--dsw-alias-label-secondary);cursor:pointer;align-items:center;gap:6px;font-size:12px;display:inline-flex}.ptK59a_ghostButton{color:var(--dsw-alias-label-primary);border:1px solid var(--dsw-alias-border-l2);cursor:pointer;white-space:nowrap;background:0 0;border-radius:8px;padding:5px 12px;font-size:12px}.ptK59a_ghostButton:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}.ptK59a_ghostButton:disabled{opacity:.45;cursor:default}.ptK59a_formActions{align-items:center;gap:8px;display:flex}.ptK59a_primaryButton{color:var(--dsw-alias-label-primary-foreground);background:var(--dsw-alias-button-primary-fill);cursor:pointer;white-space:nowrap;border:none;border-radius:8px;align-self:flex-start;padding:6px 14px;font-size:13px;font-weight:600}.ptK59a_primaryButton:hover:not(:disabled){background:var(--dsw-alias-button-primary-hover)}.ptK59a_primaryButton:disabled{opacity:.5;cursor:default}.ptK59a_linkButton{color:var(--dsw-alias-state-business-primary);cursor:pointer;white-space:nowrap;background:0 0;border:none;padding:0;font-size:12px}.ptK59a_linkButton:hover:not(:disabled){text-decoration:underline}.ptK59a_linkButton:disabled{opacity:.45;cursor:default}.ptK59a_linkButton[data-danger]{color:var(--dsw-alias-state-error-primary)}.ptK59a_banner{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);overflow-wrap:anywhere;border-radius:8px;padding:8px 12px;font-size:12.5px;line-height:1.5}.ptK59a_banner[data-kind=ok]{color:var(--dsw-alias-state-success-primary);border-color:var(--dsw-alias-state-success-primary)}.ptK59a_banner[data-kind=error]{color:var(--dsw-alias-state-error-primary);border-color:var(--dsw-alias-state-error-primary)}.ptK59a_empty{text-align:center;color:var(--dsw-alias-label-tertiary);padding:28px 12px;font-size:12.5px}.ptK59a_list{border:1px solid var(--dsw-alias-border-l1);border-radius:10px;flex-direction:column;flex:1;gap:14px;min-height:0;padding:8px 12px 10px;display:flex;overflow-y:auto}.ptK59a_group{flex-direction:column;gap:6px;display:flex}.ptK59a_groupTitle{color:var(--dsw-alias-label-primary);margin:0;font-size:13px;font-weight:600}.ptK59a_count{color:var(--dsw-alias-label-secondary);margin-left:6px;font-weight:400}.ptK59a_groupHint{color:var(--dsw-alias-label-secondary);margin:0;font-size:11px}.ptK59a_skillRow{border-bottom:1px solid var(--dsw-alias-border-l1);padding:8px 0}.ptK59a_skillRow:last-child{border-bottom:none}.ptK59a_skillRow:hover{background:var(--dsw-alias-interactive-bg-hover)}.ptK59a_skillHeader{flex-wrap:wrap;align-items:center;gap:8px;display:flex}.ptK59a_skillName{color:var(--dsw-alias-label-primary);font-size:13px;font-weight:600;font-family:var(--ds-font-family-code)}.ptK59a_badge{border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);white-space:nowrap;border-radius:999px;padding:1px 8px;font-size:11px;line-height:1.6;display:inline-block}.ptK59a_badgeWorkspace{color:var(--dsw-alias-label-secondary)}.ptK59a_badgeInvokable{color:var(--dsw-alias-state-success-primary);border-color:var(--dsw-alias-state-success-primary)}.ptK59a_badgeIsolated{color:var(--dsw-alias-state-warn-primary);border-color:var(--dsw-alias-state-warn-primary)}.ptK59a_skillIsolated{opacity:.76}.ptK59a_skillIsolated:hover{opacity:.98}.ptK59a_switch{cursor:pointer;background:0 0;border:none;border-radius:99px;align-items:center;margin-left:auto;padding:2px;display:inline-flex}.ptK59a_switch:disabled{opacity:.45;cursor:default}.ptK59a_switchTrack{background:var(--dsw-alias-border-l2);border-radius:99px;flex:none;width:30px;height:16px;transition:background .18s;position:relative}.ptK59a_switchThumb{background:var(--dsw-alias-bg-base);border-radius:50%;width:12px;height:12px;transition:left .18s;position:absolute;top:2px;left:2px}.ptK59a_switch[aria-checked=true] .ptK59a_switchTrack{background:var(--dsw-alias-state-success-primary)}.ptK59a_switch[aria-checked=true] .ptK59a_switchThumb{left:16px}.ptK59a_deleteButton{margin-left:4px}.ptK59a_skillDesc{color:var(--dsw-alias-label-primary);margin:6px 0 0;font-size:12px;line-height:1.5}.ptK59a_skillWhen{color:var(--dsw-alias-label-secondary);margin:4px 0 0;font-size:11px}.ptK59a_skillPath{color:var(--dsw-alias-label-tertiary);font-size:10px;font-family:var(--ds-font-family-code);word-break:break-all;margin:6px 0 0}.ptK59a_form{flex-direction:column;gap:10px;max-width:640px;display:flex}.ptK59a_field{flex-direction:column;gap:5px;display:flex}.ptK59a_fieldLabel{color:var(--dsw-alias-label-secondary);font-size:12px;font-weight:600}.ptK59a_input{color:var(--dsw-alias-label-primary);background:var(--dsw-specific-input-major);border:1px solid var(--dsw-alias-border-l2);resize:vertical;border-radius:8px;outline:none;padding:7px 10px;font-family:inherit;font-size:13px}.ptK59a_input:focus{border-color:var(--dsw-alias-state-business-primary)}.ptK59a_input::placeholder{color:var(--dsw-alias-label-tertiary)}.ptK59a_input:disabled{opacity:.55}.ptK59a_textarea{min-height:140px;font-family:var(--ds-font-family-code)}.ptK59a_note{color:var(--dsw-alias-label-tertiary);margin:0;font-size:11px;line-height:1.7}";
 		const tagId$3 = "@linxin666/dsh-web-all/packages/dsh-skill-explorer/src/client/panel/panel.module.css";
 		if (typeof document !== "undefined" && document.querySelector("style[data-plugin-css=" + JSON.stringify(tagId$3) + "]") === null) {
 			const tag = document.createElement("style");
@@ -37972,9 +38069,6 @@ window.__ModuleLoader__.load({
 			"count": "ptK59a_count",
 			"deleteButton": "ptK59a_deleteButton",
 			"empty": "ptK59a_empty",
-			"entry": "ptK59a_entry",
-			"entryIcon": "ptK59a_entryIcon",
-			"entryLabel": "ptK59a_entryLabel",
 			"field": "ptK59a_field",
 			"fieldLabel": "ptK59a_fieldLabel",
 			"fillBody": "ptK59a_fillBody",
@@ -38667,30 +38761,20 @@ window.__ModuleLoader__.load({
 		//#region ../dsh-skill-explorer/src/client/panel/SkillPanel.tsx
 		/**
 		* The skill center panel shell: a header with the back-to-conversation
-		* control, a tab bar, and the active tab's content. Tab state lives here
-		* (browser session state); the inactive tab unmounts, so the tab that needs
-		* the workspace resolves it itself and the list refetches when it returns.
+		* control, a tab bar, and the active tab's content.
+		*
+		* The tab and the editor target live in the controller, not in component
+		* state: the layout mounts this page only while the panel is selected, so
+		* local state would drop the open tab and any in-progress edit on every panel
+		* switch. The inactive tab unmounts, so the tab that needs the workspace
+		* resolves it itself and the list refetches when it returns.
 		*
 		* The edit tab appears only while a skill is being edited: the list row hands
 		* the chosen skill over, and leaving the editor returns to the list.
-		*
-		* The panel occupies the center column while the controller reports it open
-		* (see mount.tsx); the conversation subtree underneath stays mounted.
 		*/
 		/** The skill center panel. */
 		function SkillPanel({ controller, api }) {
-			const [activeTab, setActiveTab] = (0, react.useState)("skills");
-			const [editing, setEditing] = (0, react.useState)(void 0);
-			/** Open the editor for one row; the edit tab appears while it is set. */
-			const openEditor = (skill) => {
-				setEditing(skill);
-				setActiveTab("edit");
-			};
-			/** Leave the editor; the list remounts and refetches the saved copy. */
-			const closeEditor = () => {
-				setEditing(void 0);
-				setActiveTab("skills");
-			};
+			const { activeTab, editing } = (0, react.useSyncExternalStore)((listener) => controller.subscribe(listener), () => controller.getSnapshot());
 			const tabs = [
 				{
 					id: "skills",
@@ -38740,7 +38824,7 @@ window.__ModuleLoader__.load({
 							"data-dsh-part": "tab",
 							className: panel_module_css_default.tab,
 							onClick: () => {
-								setActiveTab(tab.id);
+								controller.setActiveTab(tab.id);
 							},
 							children: tab.label()
 						}, tab.id))
@@ -38750,14 +38834,20 @@ window.__ModuleLoader__.load({
 						children: [
 							activeTab === "skills" && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(SkillsTab, {
 								api,
-								onEdit: openEditor
+								onEdit: (skill) => {
+									controller.openEditor(skill);
+								}
 							}),
 							activeTab === "create" && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(CreateTab, { api }),
 							activeTab === "edit" && editing !== void 0 && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(EditTab, {
 								api,
 								skill: editing,
-								onDone: closeEditor,
-								onCancel: closeEditor
+								onDone: () => {
+									controller.closeEditor();
+								},
+								onCancel: () => {
+									controller.closeEditor();
+								}
 							})
 						]
 					})
@@ -38765,462 +38855,127 @@ window.__ModuleLoader__.load({
 			});
 		}
 		//#endregion
-		//#region ../dsh-skill-explorer/src/client/body-mutations.ts
-		/** Cross-bundle registry key; `Symbol.for` so every module copy agrees. */
-		const HUB_KEY$2 = Symbol.for("dsh-web.body-mutation-hub");
-		const INVALIDATION_ONLY$2 = Symbol.for("dsh-web.body-mutation-invalidation");
-		function needsRecords$2(subscribers) {
-			for (const listener of subscribers) if (!listener[INVALIDATION_ONLY$2]) return true;
-			return false;
-		}
+		//#region ../dsh-skill-explorer/src/client/native-panel.tsx
+		/** Row order among the shell's global panel rows (Plugins 0, Schedule 10, board 20). */
+		const PANEL_ORDER = 30;
 		/**
-		* Subscribe to a coalesced DOM re-check without retaining mutation records.
-		* The marked wrapper also works with an older hub, which delivers records
-		* that it simply ignores until a page reload picks up the updated hub.
+		* The sidebar row glyph the shell asks for at its own size and active state.
+		* The shell owns the button, label, tooltip and rail geometry; this component
+		* draws only the glyph, like every other panel row.
+		* @param props - the shell's icon share: square edge and selection state.
+		* @returns the decorative skill-center glyph.
 		*/
-		function subscribeBodyInvalidations$2(subscriber) {
-			const listener = () => {
-				subscriber();
-			};
-			listener[INVALIDATION_ONLY$2] = true;
-			return subscribeBodyMutations$2(listener);
-		}
-		/**
-		* Subscribe to body-level childList mutations.
-		* @param subscriber - called at most once per animation frame with the records
-		*   collected since the previous flush; must be safe to run repeatedly.
-		* @returns the disposer removing this subscriber (and the observer when it was
-		*   the last one).
-		*/
-		function subscribeBodyMutations$2(subscriber) {
-			if (typeof globalThis === "undefined" || typeof document === "undefined") return () => {};
-			if (typeof MutationObserver !== "function") return () => {};
-			const registry = globalThis;
-			let hub = registry[HUB_KEY$2];
-			if (hub === void 0) {
-				const subscribers = /* @__PURE__ */ new Set();
-				const created = {
-					observer: void 0,
-					subscribers,
-					pending: [],
-					scheduled: false
-				};
-				const flush = () => {
-					created.frame = void 0;
-					created.scheduled = false;
-					const batch = created.pending;
-					created.pending = [];
-					for (const listener of [...subscribers]) {
-						if (!subscribers.has(listener)) continue;
-						try {
-							listener(batch);
-						} catch {}
-					}
-				};
-				const schedule = () => {
-					if (created.scheduled) return;
-					created.scheduled = true;
-					if (typeof requestAnimationFrame === "function") created.frame = requestAnimationFrame(flush);
-					else flush();
-				};
-				created.observer = new MutationObserver((records) => {
-					if (needsRecords$2(subscribers)) for (const record of records) created.pending.push(record);
-					schedule();
-				});
-				created.observer.observe(document.body ?? document.documentElement, {
-					childList: true,
-					subtree: true
-				});
-				registry[HUB_KEY$2] = created;
-				hub = created;
-			}
-			const active = hub;
-			active.subscribers.add(subscriber);
-			let subscribed = true;
-			return () => {
-				if (!subscribed) return;
-				subscribed = false;
-				active.subscribers.delete(subscriber);
-				if (!needsRecords$2(active.subscribers)) active.pending = [];
-				if (active.subscribers.size === 0 && registry[HUB_KEY$2] === active) {
-					active.observer.disconnect();
-					if (active.frame !== void 0 && typeof cancelAnimationFrame === "function") cancelAnimationFrame(active.frame);
-					active.frame = void 0;
-					active.pending = [];
-					active.scheduled = false;
-					delete registry[HUB_KEY$2];
-				}
-			};
-		}
-		//#endregion
-		//#region ../dsh-skill-explorer/src/client/panel-mount-core.ts
-		/**
-		* Center-column panel takeover lifecycle.
-		*
-		* The `conversation` slot is single-occupant (ui-conversation) and external
-		* plugins cannot declare slots, so a family panel takes over the center
-		* column at the DOM level: a container is appended inside the center column
-		* (`[class*="centerCol"]`, the 0.1.0-rc.6+ AppFrame layout; previously
-		* `[data-pane="conversation"]` on older shells — the mount selector keeps
-		* both, ssh #243 / task-board #107) as an extra trailing child React never
-		* manages, and a stylesheet rule hides the conversation content while the
-		* panel is active. Toggling is a data attribute on <html> — no React
-		* involvement, so the conversation subtree underneath stays mounted and
-		* stateful.
-		*
-		* Consuming plugins keep a thin wrapper that supplies the panel tree,
-		* container attribute names, and stylesheet class; those names are pinned by
-		* each package's CSS, skins, and the semantic-attributes contract. Occupancy
-		* across the family rides {@link PANEL_FAMILY}, not per-plugin sibling pairs,
-		* so a third panel cannot leave a stale occupant behind. The sidebar row
-		* toggling the panel shares its core the same way
-		* (shared/client/sidebar-entry-core.ts, synced copy).
-		*
-		* The task board no longer mounts through this core: it contributes a
-		* `sidebar.panellist` row and a keyed `main` page through the official slots
-		* system, so the shell owns its container. It keeps a PANEL_FAMILY row because
-		* the panels that do mount through this core take the column over at the DOM
-		* level and would hide the board's page; the board must be able to announce
-		* that it took the column, and to close when a takeover panel announces. Its
-		* half of the protocol lives in
-		* packages/dsh-task-board/src/client/native-panel.tsx, which names those
-		* takeover rows in `TAKEOVER_PANEL_NAMES` because it cannot value-import this
-		* file.
-		*/
-		/**
-		* The center column's panel family: the single source of occupancy truth.
-		*
-		* Every family panel appears exactly once. Opening one clears the other rows'
-		* `<html>` attributes and broadcasts its own name; an open panel closes when
-		* the broadcast name is not its own. The previous shape paired each panel with
-		* ONE sibling (ssh <-> task-board), which cannot express three panels: a panel
-		* that did not name the third one stayed logically open while invisible, so
-		* its sidebar row needed a second click to reopen. Adding a family panel is
-		* one row here, not N pairwise options.
-		*/
-		const PANEL_FAMILY = [
-			{
-				panel: "taskboard",
-				activeAttribute: "data-dsh-taskboard-active"
-			},
-			{
-				panel: "ssh",
-				activeAttribute: "data-dsh-ssh-active"
-			},
-			{
-				panel: "skill-explorer",
-				activeAttribute: "data-dsh-skill-explorer-active"
-			}
-		];
-		const CONVERSATION_COLUMN_SELECTOR = "[data-pane=\"conversation\"], [class*=\"centerCol\"]";
-		/** Cross-plugin activation event; detail is the activating panel name. */
-		const ACTIVATE_EVENT = "dsh-panel-activate";
-		const SIDEBAR_ROW_SELECTOR = "[class*=\"sessionRow\"], [class*=\"projectRow\"], [class*=\"searchResultRow\"], [class*=\"searchResultWorkspace\"], [class*=\"newSession\"]";
-		/** Find the center column, or undefined while the frame is not mounted. */
-		function conversationColumn() {
-			return document.querySelector(CONVERSATION_COLUMN_SELECTOR) ?? void 0;
-		}
-		/**
-		* Mount a family panel into the center column and bind its visibility to the
-		* owning controller's open state.
-		* @returns disposer unmounting the tree and restoring the column.
-		*/
-		function mountCenterPanel(options) {
-			let root;
-			let container;
-			let unsubscribeLocale;
-			try {
-				unsubscribeLocale = options.locale?.subscribe(() => {
-					if (root !== void 0) options.render(root);
-				});
-			} catch {}
-			const ensure = () => {
-				if (container !== void 0 && !container.isConnected) {
-					root?.unmount();
-					root = void 0;
-					container.remove();
-					container = void 0;
-				}
-				if (container === void 0) {
-					const column = conversationColumn();
-					if (column === void 0) return;
-					container = document.createElement("div");
-					container.dataset[options.viewDatasetKey] = "";
-					container.dataset.dshPlugin = options.pluginName;
-					container.className = options.viewClassName;
-					column.appendChild(container);
-				}
-				if (root !== void 0 || !options.isOpen()) return;
-				root = (0, react_dom_client.createRoot)(container);
-				options.render(root);
-			};
-			const unsubscribeBody = subscribeBodyInvalidations$2(() => {
-				ensure();
+		function SkillExplorerPanelIcon({ size }) {
+			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
+				viewBox: "0 0 16 16",
+				width: size,
+				height: size,
+				fill: "none",
+				stroke: "currentColor",
+				strokeWidth: "1.3",
+				strokeLinecap: "round",
+				strokeLinejoin: "round",
+				"aria-hidden": "true",
+				children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M8 3.2C6.6 2 4.5 2 3 2v10.5c1.5 0 3.6 0 5 1.3 1.4-1.3 3.5-1.3 5-1.3V2c-1.5 0-3.6 0-5 1.2z" }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M8 3.2v10.6" })]
 			});
-			const applyActive = () => {
-				if (options.isOpen()) {
-					ensure();
-					for (const member of PANEL_FAMILY) if (member.panel !== options.panelName) document.documentElement.removeAttribute(member.activeAttribute);
-					document.documentElement.setAttribute(options.activeAttribute, "");
-					document.dispatchEvent(new CustomEvent(ACTIVATE_EVENT, { detail: options.panelName }));
-				} else document.documentElement.removeAttribute(options.activeAttribute);
-			};
-			const onOtherActivate = (event) => {
-				if (event.detail !== options.panelName && options.isOpen()) options.close();
-			};
-			const onClickSidebarRow = (event) => {
-				if (!options.isOpen()) return;
-				const target = event.target;
-				if (target === null) return;
-				if (target.closest(SIDEBAR_ROW_SELECTOR) !== null) options.close();
-			};
-			document.addEventListener("click", onClickSidebarRow, true);
-			document.addEventListener(ACTIVATE_EVENT, onOtherActivate);
-			const unsubscribe = options.subscribe(applyActive);
-			applyActive();
-			ensure();
-			return () => {
-				document.removeEventListener("click", onClickSidebarRow, true);
-				document.removeEventListener(ACTIVATE_EVENT, onOtherActivate);
-				unsubscribeBody();
-				unsubscribe();
-				unsubscribeLocale?.();
-				document.documentElement.removeAttribute(options.activeAttribute);
-				root?.unmount();
-				root = void 0;
-				container?.remove();
-				container = void 0;
-			};
 		}
-		//#endregion
-		//#region ../dsh-skill-explorer/src/client/mount.tsx
 		/**
-		* Mount the panel React tree into the center column and bind its visibility
-		* to the controller's panelOpen state.
-		* @param controller - the panel controller driving the view.
-		* @param api - the skill center API client the tabs operate through.
-		* @param locale - locale-change source; when given, re-renders an open panel
-		*   on a Language switch.
-		* @returns disposer unmounting the tree and restoring the column.
+		* The main-slot page. The layout mounts it only while this panel is selected,
+		* so the conversation keeps the center column untouched the rest of the time;
+		* the wrapper carries the pinned `data-dsh-skill-explorer-view` semantic
+		* anchor (L2 contract, skins) the takeover container used to own.
+		* @param props - the framework main-slot share plus this entry's injected face.
+		* @returns the skill center page.
 		*/
-		function mountPanel(controller, api, locale) {
-			return mountCenterPanel({
-				render: (root) => root.render(/* @__PURE__ */ (0, react_jsx_runtime.jsx)(SkillPanel, {
+		function SkillExplorerPanelPage({ controller, api }) {
+			return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+				className: panel_module_css_default.view,
+				"data-dsh-skill-explorer-view": "",
+				"data-dsh-plugin": "skill-explorer",
+				children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(SkillPanel, {
 					controller,
 					api
-				})),
-				viewDatasetKey: "dshSkillExplorerView",
-				pluginName: "skill-explorer",
-				viewClassName: panel_module_css_default.view,
-				activeAttribute: "data-dsh-skill-explorer-active",
-				panelName: "skill-explorer",
-				isOpen: () => controller.getSnapshot().panelOpen,
-				close: () => controller.close(),
-				subscribe: (listener) => controller.subscribe(listener),
-				locale
+				})
 			});
-		}
-		//#endregion
-		//#region ../dsh-skill-explorer/src/client/panel/controller.ts
-		/** The panel state owner the sidebar entry toggles and the view renders from. */
-		var PanelController = class {
-			panelOpen = false;
-			listeners = /* @__PURE__ */ new Set();
-			getSnapshot() {
-				return { panelOpen: this.panelOpen };
-			}
-			subscribe(fn) {
-				this.listeners.add(fn);
-				return () => {
-					this.listeners.delete(fn);
-				};
-			}
-			open() {
-				if (this.panelOpen) return;
-				this.panelOpen = true;
-				this.notify();
-			}
-			close() {
-				if (!this.panelOpen) return;
-				this.panelOpen = false;
-				this.notify();
-			}
-			toggle() {
-				if (this.panelOpen) this.close();
-				else this.open();
-			}
-			notify() {
-				for (const fn of [...this.listeners]) fn();
-			}
-		};
-		//#endregion
-		//#region ../dsh-skill-explorer/src/client/sidebar-entry-core.ts
-		/**
-		* Shared sidebar entry injection core.
-		*
-		* dsh's sidebar shell exposes no slot an external plugin can register into,
-		* so the entry row is injected between the shell's New Session button and the
-		* workspace browser. The injection self-heals: a MutationObserver watches the
-		* sidebar root and re-inserts the row whenever a React re-render displaces it
-		* (re-insertion happens in the same frame, before paint, so no flicker).
-		*
-		* The row is plain DOM (no React tree) so it can never disturb the shell's
-		* reconciliation; the view it toggles is a separate root owned by the caller.
-		*
-		* Packages receive this file as a generated copy via scripts/sync-shared.mjs;
-		* edit the shared source and re-run the sync instead of editing a copy.
-		*/
-		/** Find the sidebar shell root element, or undefined while not yet mounted. */
-		function sidebarRoot() {
-			const column = document.querySelector("[data-pane=\"sidebar\"], [class*=\"sidebarCol\"]");
-			if (column === null) return void 0;
-			return column.querySelector("[class*=\"logoRow\"]")?.parentElement ?? column.firstElementChild;
-		}
-		/** The New Session button: nested in the logo row on current shells, a direct child on legacy shells. */
-		function newSessionButton(root) {
-			const nested = root.querySelector("button[class*=\"newSession\"]");
-			if (nested !== null) return nested;
-			for (const child of root.children) if (child.tagName === "BUTTON") return child;
-		}
-		/** Build the entry row (detached; inserted once the shell is up). */
-		function createEntry(options) {
-			const entry = document.createElement("button");
-			entry.type = "button";
-			entry.setAttribute(options.rowAttribute, "");
-			if (options.plugin !== void 0) {
-				entry.setAttribute("data-dsh-plugin", options.plugin);
-				entry.setAttribute("data-dsh-part", "sidebar-entry");
-			}
-			entry.className = options.css["entry"] ?? "";
-			const labelSpan = document.createElement("span");
-			labelSpan.className = options.css["entryLabel"] ?? "";
-			const iconSpan = document.createElement("span");
-			iconSpan.className = options.css["entryIcon"] ?? "";
-			iconSpan.innerHTML = options.icon;
-			entry.append(iconSpan, labelSpan);
-			const applyLabel = () => {
-				entry.setAttribute("aria-label", options.label());
-				if (options.tooltip !== void 0) entry.setAttribute("title", options.tooltip());
-				labelSpan.textContent = options.label();
-			};
-			applyLabel();
-			entry.addEventListener("click", options.onToggle);
-			return {
-				entry,
-				applyLabel
-			};
-		}
-		/** Re-insert the entry after the New Session row (before the browser region). */
-		function placeEntry(root, entry, options) {
-			const button = newSessionButton(root);
-			if (button === void 0) return false;
-			if (entry.parentElement !== root) {
-				const row = button.closest("[class*=\"logoRow\"]");
-				const base = row !== null && row.parentElement === root ? row : button;
-				const family = Array.from(root.children).filter((el) => el instanceof HTMLElement && el.matches(options.familySelectors.join(", ")));
-				const anchor = options.position === "before" ? family.length > 0 ? family[0] : base.nextElementSibling : family.length > 0 ? family[family.length - 1].nextElementSibling : base.nextElementSibling;
-				root.insertBefore(entry, anchor);
-			}
-			return true;
 		}
 		/**
-		* Mount the sidebar entry, waiting for the shell to render and self-healing
-		* on later React re-renders.
-		* @param options - the row's attribute/icon/copy/action/ordering configuration.
-		* @returns disposer removing the entry and its observers.
+		* The family's single-occupant center-column protocol.
+		*
+		* dsh-ssh still takes the column over at the DOM level: while its
+		* `html[data-dsh-ssh-active]` attribute is set, its stylesheet hides every
+		* other child of the center column, this page included, and the layout cannot
+		* deselect our panel for it (ssh is not a layout panel). Until ssh moves to
+		* the native seats as well, the two have to hand the column to each other
+		* explicitly. The event and the detail values are the shared contract owned by
+		* `shared/client/panel-mount-core.ts`.
 		*/
-		function mountSidebarEntry$1(options) {
-			if (typeof document !== "undefined" && document.querySelector(options.rowSelector) !== null) return () => {};
-			const { entry, applyLabel } = createEntry(options);
-			let root;
-			let placed = false;
-			let unsubscribeRefresh;
-			if (options.refresh !== void 0) try {
-				unsubscribeRefresh = options.refresh.subscribe(applyLabel);
-			} catch {}
-			const tryPlace = () => {
-				if (root !== void 0 && !root.isConnected) {
-					rootObserver.disconnect();
-					root = void 0;
-					placed = false;
-				}
-				if (placed) {
-					if (document.body.contains(entry)) return;
-					rootObserver.disconnect();
-					root = void 0;
-					placed = false;
-				}
-				root ??= sidebarRoot();
-				if (root === void 0) return;
-				placed = placeEntry(root, entry, options);
-				if (placed) rootObserver.observe(root, {
-					childList: true,
-					subtree: true
-				});
+		const PANEL_ACTIVATE_EVENT = "dsh-panel-activate";
+		/** This panel's name in the family protocol. */
+		const PANEL_NAME = "skill-explorer";
+		/**
+		* The family panels whose activation closes this panel: exactly the rows that
+		* still mount through the DOM takeover. Empty once every family panel is
+		* native, at which point this whole protocol goes away (the layout alone
+		* decides which main page renders).
+		*/
+		const TAKEOVER_PANEL_NAMES = ["ssh"];
+		/**
+		* Keep this panel mutually exclusive with the DOM-takeover family panels.
+		* @param controller - the controller whose open state drives the protocol.
+		* @returns disposer removing the listener and the subscription.
+		*/
+		function coordinateWithTakeoverPanels(controller) {
+			let open = controller.getSnapshot().panelOpen;
+			const onActivate = (event) => {
+				if (!TAKEOVER_PANEL_NAMES.includes(event.detail)) return;
+				if (controller.getSnapshot().panelOpen) controller.close();
 			};
-			const unsubscribeBody = subscribeBodyInvalidations$2(() => {
-				tryPlace();
+			const unsubscribe = controller.subscribe(() => {
+				const next = controller.getSnapshot().panelOpen;
+				if (next === open) return;
+				open = next;
+				if (next) document.dispatchEvent(new CustomEvent(PANEL_ACTIVATE_EVENT, { detail: PANEL_NAME }));
 			});
-			const rootObserver = new MutationObserver(() => {
-				if (root === void 0 || !root.isConnected) {
-					placed = false;
-					tryPlace();
-					return;
-				}
-				if (!root.contains(entry)) placed = placeEntry(root, entry, options);
-			});
-			const unsubscribeActive = options.active === void 0 ? void 0 : (() => {
-				const syncActive = () => {
-					if (options.active.isOpen()) entry.dataset.active = "true";
-					else delete entry.dataset.active;
-				};
-				const unsubscribe = options.active.subscribe(syncActive);
-				syncActive();
-				return unsubscribe;
-			})();
-			tryPlace();
+			document.addEventListener(PANEL_ACTIVATE_EVENT, onActivate);
 			return () => {
-				unsubscribeBody();
-				rootObserver.disconnect();
-				unsubscribeRefresh?.();
-				unsubscribeActive?.();
-				entry.remove();
+				document.removeEventListener(PANEL_ACTIVATE_EVENT, onActivate);
+				unsubscribe();
 			};
 		}
-		//#endregion
-		//#region ../dsh-skill-explorer/src/client/sidebar-entry.ts
-		/** Stable data attribute identifying the injected entry row. */
-		const ENTRY_SELECTOR = "[data-dsh-skill-explorer-entry]";
-		/** Inline book icon normalized to the shell's 16px navigation glyph size. */
-		const ICON = "<svg viewBox=\"0 0 16 16\" width=\"16\" height=\"16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.3\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M8 3.2C6.6 2 4.5 2 3 2v10.5c1.5 0 3.6 0 5 1.3 1.4-1.3 3.5-1.3 5-1.3V2c-1.5 0-3.6 0-5 1.2z\"/><path d=\"M8 3.2v10.6\"/></svg>";
 		/**
-		* Mount the sidebar entry, waiting for the shell to render and self-healing
-		* on later React re-renders.
-		* @param controller - the panel controller the entry toggles.
-		* @param locale - locale-change source; when given, re-applies the label on
-		*   a Language switch (the plain-DOM row otherwise keeps the mount-time copy).
-		* @returns disposer removing the entry and its observers.
+		* Register the skill center's sidebar row and center-column page.
+		*
+		* Both seats are declared by shell plugins this package does not depend on at
+		* runtime, so each registration is wrapped in `ctx.slots.inject`: the callback
+		* runs only after the owning entry declares the seat, and a shell that never
+		* declares it leaves the panel simply absent instead of failing boot.
+		* @param ctx - client root context (services: slots).
+		* @param controller - the controller the page and the row drive.
+		* @param api - the skill center API client the page operates through.
+		* @returns disposer releasing both registrations.
 		*/
-		function mountSidebarEntry(controller, locale) {
-			return mountSidebarEntry$1({
-				rowAttribute: "data-dsh-skill-explorer-entry",
-				rowSelector: ENTRY_SELECTOR,
-				plugin: "skill-explorer",
-				icon: ICON,
-				css: panel_module_css_default,
-				label: () => tt("entry.label"),
-				tooltip: () => tt("entry.tooltip"),
-				refresh: locale === void 0 ? void 0 : { subscribe: (listener) => locale.subscribe(listener) },
-				onToggle: () => {
-					controller.toggle();
-				},
-				position: "after",
-				familySelectors: ["[data-dsh-ssh-entry]", "[data-dsh-skill-explorer-entry]"],
-				active: {
-					subscribe: (listener) => controller.subscribe(listener),
-					isOpen: () => controller.getSnapshot().panelOpen
-				}
-			});
+		function registerSkillExplorerPanel(ctx, controller, api) {
+			const releaseCoordination = coordinateWithTakeoverPanels(controller);
+			const slots = ctx.slots;
+			const disposers = [];
+			disposers.push(slots.inject("sidebar.panellist", () => slots.register({
+				name: "sidebar.panellist",
+				id: SKILL_EXPLORER_PANEL_ID,
+				order: PANEL_ORDER,
+				label: () => tt("entry.label")
+			}, SkillExplorerPanelIcon)));
+			disposers.push(slots.inject("main", () => slots.register({
+				name: "main",
+				key: SKILL_EXPLORER_PANEL_ID,
+				inject: () => ({
+					controller,
+					api
+				})
+			}, SkillExplorerPanelPage)));
+			return () => {
+				releaseCoordination();
+				for (const dispose of disposers.splice(0)) dispose();
+			};
 		}
 		//#endregion
 		//#region ../dsh-skill-explorer/src/client/telemetry.ts
@@ -39322,13 +39077,23 @@ window.__ModuleLoader__.load({
 				setRuntimeTranslate(ctx.locale.bind(NS$3));
 			} catch {}
 			const api = new SkillApi();
-			const controller = new PanelController();
+			const controller = new PanelController({ panel: { select: (panelId) => {
+				ctx.get("layout")?.selectPanel?.(panelId);
+			} } });
 			const disposers = [];
 			try {
-				disposers.push(mountSidebarEntry(controller, ctx.locale));
-				disposers.push(mountPanel(controller, api, ctx.locale));
+				disposers.push(registerSkillExplorerPanel(ctx, controller, api));
+				const layoutFace = ctx.get("layout");
+				if (layoutFace?.panelInfo !== void 0) {
+					const sync = () => {
+						const active = layoutFace.panelInfo.getSnapshot().activePanelId;
+						controller.syncPanelSelection(active === "skill-explorer" ? SKILL_EXPLORER_PANEL_ID : null);
+					};
+					sync();
+					disposers.push(layoutFace.panelInfo.subscribe(sync));
+				}
 			} catch (error) {
-				console.warn("[skill-explorer] mount failed:", error);
+				console.warn("[skill-explorer] panel registration failed:", error);
 			}
 			ctx.effect(() => () => {
 				for (const dispose of disposers.splice(0)) dispose();

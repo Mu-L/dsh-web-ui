@@ -13,12 +13,14 @@ DSH Web GUI 的**技能中心**插件：侧边栏「技能中心」入口打开�
   路由族（list / set-enabled / create / delete / health），默认 loopback
   围栏，已配对设备 cookie 为额外放行路径（不硬依赖 remote-web-ui）；数据来自
   文件系统扫描（官方根约定）+ `ctx.skills` 注册表合并。
-- client 半区（`src/client/`）注入侧边栏入口（DOM 级，MutationObserver
-  自愈），面板是**中间列整页面板**（`src/client/panel/`，`SkillPanel.tsx` 壳
-  + 技能/创建页签，编辑时多出编辑页签），接管方式与 ssh / 任务看板同族：
-  `mount.tsx` 包装 `panel-mount-core.ts`（sync 生成的副本，禁止手改；家族
-  互斥表在共享源里），打开时 `<html>` 打 `data-dsh-skill-explorer-active`
-  并顶掉其他家族面板。
+- client 半区（`src/client/`）经官方槽位注册**原生中栏面板**：`native-panel.tsx`
+  往 shell 自己的面板列表（`sidebar.panellist`）贡献一行、往布局的 keyed
+  `main` 槽贡献页面（`src/client/panel/`，`SkillPanel.tsx` 壳 + 技能/创建
+  页签，编辑时多出编辑页签），并驱动 `ctx.layout.selectPanel`——与任务看板
+  同一形态，行盒 / 标签 / 高亮 / 折叠轨道归 shell。页签与编辑目标存在
+  `panel/controller.ts`，因为布局只在该面板被选中时挂载页面，组件本地 state
+  会在切面板时丢失；页面只读 controller 快照。ssh 仍是 DOM 接管期间，本包保留
+  `dsh-panel-activate` 过渡握手（`native-panel.tsx`），ssh 也迁原生后一并删除。
 - 纯逻辑（扫描/分组/frontmatter 解析）在 host 侧单测锁定行为
   （`tests/collect.spec.ts`、`tests/frontmatter.spec.ts`、
   `tests/routes.spec.ts`、`tests/access.spec.ts`）；路由围栏与错误路径必须带测试。
