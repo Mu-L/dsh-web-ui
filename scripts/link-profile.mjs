@@ -131,30 +131,46 @@ export function decideAggregateRelink(existing, currentTarget, satelliteDir, dec
   return 'replace'
 }
 
-/** Minimal semver caret/tilde/exact-range satisfaction for the relink guard. */
+/**
+ * Minimal semver caret/tilde/x-range/exact satisfaction for the relink guard.
+ * Covers the range shapes the aggregate declares ('^0.4.2', '||' alternations,
+ * exact pins); prerelease suffixes compare by their release core, which is the
+ * pragmatic choice for a local-checkout link guard.
+ */
 function satifies(version, range) {
   if (typeof range !== 'string' || range.length === 0) return false
-  const parse = (v) => v.replace(/^v/, '').split('.').map((n) => parseInt(n, 10))
-  const eq = (a, b) => a.length === 3 && b.length === 3 && a.every((n, i) => n === b[i])
+  const parse = (v) => v.replace(/^v/, '').split('-')[0].split('.').map((n) => parseInt(n, 10))
+  const cmp = (a, b) => {
+    for (let i = 0; i < 3; i++) {
+      if ((a[i] ?? 0) !== (b[i] ?? 0)) return (a[i] ?? 0) < (b[i] ?? 0) ? -1 : 1
+    }
+    return 0
+  }
+  const gte = (a, b) => cmp(a, b) >= 0
+  const lt = (a, b) => cmp(a, b) < 0
+  const bump = (base, index) => base.map((n, i) => (i === index ? n + 1 : 0))
   const v = parse(version)
-  const parts = range.split('||').map((s) => s.trim()).filter(Boolean)
-  return parts.some((part) => {
+  if (v.length !== 3 || v.some((n) => Number.isNaN(n))) return false
+  return range.split('||').map((s) => s.trim()).filter(Boolean).some((part) => {
     if (part.startsWith('^')) {
+      // ^1.2.3 -> [2,0,0); ^0.4.2 -> [0,5,0); ^0.0.3 -> [0,0,4)
       const base = parse(part.slice(1))
-      if (!eq(v, base)) return false
-      const next = [base[0] + 1, 0, 0]
-      for (let i = 0; i < 3; i++) {
-        if (v[i] !== base[i]) return v[i] > 0 || next[0] > base[0]
-      }
-      return true
+      const upper = bump(base, base[0] > 0 ? 0 : base[1] > 0 ? 1 : 2)
+      return gte(v, base) && lt(v, upper)
     }
     if (part.startsWith('~')) {
       const base = parse(part.slice(1))
-      if (!eq(v, base)) return false
-      return v[0] === base[0] && v[1] === base[1]
+      return gte(v, base) && lt(v, bump(base, 1))
     }
-    if (/^[\dx*]/.test(part)) return true
-    return eq(v, parse(part))
+    if (/^[x*X]$/.test(part)) return true
+    const xRange = part.match(/^(\d+|[xX*])(?:\.(\d+|[xX*]))?(?:\.(\d+|[xX*]))?$/)
+    if (xRange !== null) {
+      const groups = xRange.slice(1)
+      const base = groups.map((n) => (n === undefined || /[xX*]/.test(n) ? 0 : parseInt(n, 10)))
+      const firstX = groups.findIndex((n) => n === undefined || /[xX*]/.test(n))
+      return gte(v, base) && lt(v, bump(base, firstX === -1 ? 2 : firstX))
+    }
+    return cmp(v, parse(part)) === 0
   })
 }
 

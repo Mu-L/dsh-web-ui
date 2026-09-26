@@ -131,3 +131,29 @@ test('aggregate relink: skips a satellite outside the declared range', () => {
     rmSync(root, { recursive: true, force: true })
   }
 })
+
+test('aggregate relink: accepts a newer patch satellite under a caret range', () => {
+  const root = mkdtempSync(join(tmpdir(), 'link-profile-relink-'))
+  try {
+    const satellite = join(root, 'satellites', 'dsh-skins')
+    mkdirSync(join(satellite, 'lib'), { recursive: true })
+    writeFileSync(join(satellite, 'package.json'), JSON.stringify({ name: '@linxin666/dsh-client-ui-skin-center', version: '0.4.3' }))
+    writeFileSync(join(satellite, 'lib', 'index.js'), 'export {}')
+    assert.equal(decideAggregateRelink('symlink', STORE_LINK, satellite, '^0.4.2'), 'replace')
+  } finally {
+    rmSync(root, { recursive: true, force: true })
+  }
+})
+
+test('aggregate relink: caret range still rejects the next minor', () => {
+  const root = mkdtempSync(join(tmpdir(), 'link-profile-relink-'))
+  try {
+    const satellite = join(root, 'satellites', 'dsh-skins')
+    mkdirSync(join(satellite, 'lib'), { recursive: true })
+    writeFileSync(join(satellite, 'package.json'), JSON.stringify({ name: '@linxin666/dsh-client-ui-skin-center', version: '0.5.0' }))
+    writeFileSync(join(satellite, 'lib', 'index.js'), 'export {}')
+    assert.equal(decideAggregateRelink('symlink', STORE_LINK, satellite, '^0.4.2'), 'skip-report')
+  } finally {
+    rmSync(root, { recursive: true, force: true })
+  }
+})
