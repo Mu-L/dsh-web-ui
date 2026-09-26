@@ -17,6 +17,15 @@ packages/AGENTS.md 的全局/包级规则。
   checkout web）则全部走官方 RPC（单一写入器 = 官方安装器）；不存在（npm 发布的官方
   web）则走本包 host 半区的 loopback HTTP 网关——安装/卸载 spawn 官方 `dsh plugin`
   CLI（仍是唯一写入器），启停写 profile patch 的 `disabled` 覆盖行。
+- **应用自有 profile 的更新走官方进程内管理器**：打包桌面启动（`facts.desktop`）里 CLI
+  拒绝写该 profile（`dsh plugin --profile desktop …` 直接报错），更新必须经宿主挂载的
+  官方 `pluginManager` 服务（`ctx.get('pluginManager')`，契约观察不 import）；其余运行时
+  CLI 仍是唯一写入器，两条路径共用同一任务表、状态轮询与版本核对。
+- **CLI 是 Node 脚本时不能用 shebang 直接 spawn**：GUI 启动的宿主（桌面应用）PATH 里没有
+  `node`，`#!/usr/bin/env node` 会在 CLI 启动前以 `env: node: No such file or directory`
+  （退出码 127）失败。用 CLI 旁的 `node`（npm-global/homebrew 布局），否则用
+  `process.execPath` 执行脚本，并把 CLI 所在目录放到子进程 PATH 首位——`dsh plugin`
+  转发的 pnpm 就在那里。
 - 网关安全：所有 `/api/plugin-manager/*` 路由必须经 `isLoopbackRequest` 门禁；
   set-enabled 写文件走备份 + tmp + rename；不改其它写入器的行（insert 格式行内层
   `disabled` 除外，见 `src/host/rows.ts`）。

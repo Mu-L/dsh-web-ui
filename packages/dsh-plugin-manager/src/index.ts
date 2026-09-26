@@ -15,7 +15,7 @@
 import type { Context } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/dsh-host-webserver'
 import { mountOnce } from './mount-once.ts'
-import { findDshBinary, CliGateway } from './host/gateway.ts'
+import { findDshBinary, CliGateway, type NativePluginManager } from './host/gateway.ts'
 import { profileExists, resolveProfile, type LaunchedProfile } from './host/profile.ts'
 import { makeGatewayRoutes } from './host/routes.ts'
 
@@ -44,6 +44,25 @@ function launchedProfile(ctx: Context): LaunchedProfile | undefined {
   return facts === undefined || facts === null ? undefined : facts
 }
 
+/**
+ * The official in-process plugin manager, when the running host mounts one.
+ * `@deepseek-ai/dsh-plugin-manager` registers itself as the `pluginManager`
+ * service (a TypertRemoteService, which is an ordinary Cordis Service under
+ * that key); this is the same writer the official Plugins page drives, read here
+ * as a contract observation rather than an import — the repository builds
+ * against the official SDK's public packages, and this package must keep
+ * running when a host mounts no manager at all. Only an application-owned
+ * profile uses it (see CliGateway), because there the CLI refuses the profile.
+ * @param ctx - host plugin context.
+ * @returns the manager, or undefined when the host publishes none.
+ */
+function officialManager(ctx: Context): NativePluginManager | undefined {
+  // Called as a method on the context: the service lookup reads the context's
+  // own registry, so the receiver must stay intact.
+  const manager = (ctx as unknown as { get(name: string): unknown }).get('pluginManager')
+  return manager === undefined || manager === null ? undefined : manager as NativePluginManager
+}
+
 function applyImpl(ctx: Context): void {
   // Gateway mode needs the boot profile; the launched profile the Host
   // publishes is authoritative when the launcher passed no flag and no
@@ -58,7 +77,7 @@ function applyImpl(ctx: Context): void {
   }
   if (!profileExists(facts.profileDir)) return
 
-  const gateway = new CliGateway(facts)
+  const gateway = new CliGateway(facts, process.env, { nativeManager: () => officialManager(ctx) })
   const cliAvailable = (): boolean => findDshBinary() !== null
 
   ctx.effect(() => {

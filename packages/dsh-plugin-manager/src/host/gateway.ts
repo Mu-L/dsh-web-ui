@@ -10,7 +10,7 @@
  */
 
 import { spawn } from 'node:child_process'
-import { existsSync } from 'node:fs'
+import { closeSync, existsSync, openSync, readSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { join, posix, win32 } from 'node:path'
 import type { InstalledPluginItem } from '../core/protocol.ts'
@@ -144,15 +144,70 @@ function capture(chunk: Buffer, buffer: OutputCapture): void {
   buffer.push(chunk)
 }
 
+/** Bytes read for the shebang probe (a Node script names its interpreter on line 1). */
+const SHEBANG_PROBE_BYTES = 256
+
 /**
- * The spawn command for the dsh CLI on this platform. Windows runs the
- * npm-generated dsh.cmd wrapper by resolving its node binary and bin.js script
- * and spawning them directly: going through cmd.exe splits unquoted paths with
- * spaces (`'D:\Program' is not recognized`).
+ * Read a file's leading bytes for the shebang probe. Every failure — a missing
+ * file, a directory, a permission error, an unreadable asar entry — reads as
+ * "no head", so the caller falls back to spawning the path directly.
+ * @param path - file to probe.
+ * @returns the leading text, or undefined.
+ */
+export function readFileHead(path: string): string | undefined {
+  let fd: number | undefined
+  try {
+    fd = openSync(path, 'r')
+    const buffer = Buffer.alloc(SHEBANG_PROBE_BYTES)
+    const read = readSync(fd, buffer, 0, SHEBANG_PROBE_BYTES, 0)
+    return buffer.subarray(0, read).toString('utf8')
+  } catch {
+    return undefined
+  } finally {
+    if (fd !== undefined) {
+      try {
+        closeSync(fd)
+      } catch {
+        // Already closed or never opened: nothing to release.
+      }
+    }
+  }
+}
+
+/**
+ * Whether a resolved CLI path is a Node script: a `.js` module, or a file whose
+ * shebang names node. A Node script cannot be spawned as an executable on its
+ * own: the kernel hands the shebang to the interpreter it names, and
+ * `#!/usr/bin/env node` resolves node through PATH — which a GUI-launched host
+ * (the packaged Desktop app) does not carry, so the child dies before the CLI
+ * starts with `env: node: No such file or directory` (exit 127).
+ * @param path - the resolved CLI path.
+ * @param readHead - head probe (test seam).
+ * @returns true when the path needs a Node interpreter.
+ */
+export function isNodeScript(path: string, readHead: (path: string) => string | undefined = readFileHead): boolean {
+  if (/\.(?:c|m)?js$/i.test(path)) return true
+  const head = readHead(path)
+  if (head === undefined) return false
+  const firstLine = head.split('\n', 1)[0] ?? ''
+  return /^#!.*\bnode\b/.test(firstLine)
+}
+
+/**
+ * The spawn command for the dsh CLI on this platform. A Node script (the
+ * npm/homebrew `dsh` shim, a `.bin` symlink, a packaged `lib/bin.js`) is run
+ * by an interpreter that exists regardless of PATH: a `node` sitting beside the
+ * CLI when the installation ships one (npm-global and homebrew layouts), else
+ * the host's own interpreter — `process.execPath`, which the ELECTRON_RUN_AS_NODE
+ * branch in {@link spawnDsh} covers for an Electron host. Windows additionally
+ * resolves the npm-generated shim into node plus bin.js and spawns them
+ * directly: going through cmd.exe splits unquoted paths with spaces
+ * (`'D:\Program' is not recognized`).
  * @param binary - the dsh CLI path found by {@link findDshBinary}.
  * @param platform - process platform (test seam).
  * @param localNodeExists - existence probe (test seam).
  * @param binJsExists - existence probe for the resolved bin script (test seam).
+ * @param readHead - shebang probe (test seam).
  * @returns the executable and the argument prefix to run the dsh bin script.
  */
 export function dshSpawnCommand(
@@ -160,10 +215,15 @@ export function dshSpawnCommand(
   platform: string = process.platform,
   localNodeExists: (path: string) => boolean = existsSync,
   binJsExists: (path: string) => boolean = existsSync,
+  readHead: (path: string) => string | undefined = readFileHead,
 ): { command: string; argsPrefix: string[] } {
-  // bin.js carries a node shebang, so POSIX spawns it directly; only Windows
-  // lacks a launcher for a script path (see the bin.js branch below).
-  if (platform !== 'win32') return { command: binary, argsPrefix: [] }
+  if (platform !== 'win32') {
+    // A native executable (or a shell wrapper naming its own interpreter)
+    // spawns as-is; only a Node script needs the interpreter resolved here.
+    if (!isNodeScript(binary, readHead)) return { command: binary, argsPrefix: [] }
+    const sibling = posix.join(posix.dirname(binary), 'node')
+    return { command: localNodeExists(sibling) ? sibling : process.execPath, argsPrefix: [binary] }
+  }
   // Windows paths must be parsed with win32 semantics even when the probing
   // host is POSIX (unit tests, and any future cross-platform probing).
   const dir = win32.dirname(binary)
@@ -198,18 +258,61 @@ export function windowsCmdShimArgs(binary: string, args: readonly string[]): str
   return ['/d', '/s', '/c', commandLine]
 }
 
-/** Spawn the dsh CLI with piped stdio and no shell parsing (see {@link dshSpawnCommand}). */
+/**
+ * Prepend one directory to a child environment's PATH, collapsing every case
+ * variant of the key into one `PATH`. Windows exposes the variable as `Path`,
+ * and spreading `process.env` into a plain object preserves that spelling:
+ * assigning `env.PATH` beside it would leave two keys whose serialization
+ * drops the system directories (the desktop childEnv defect).
+ * @param env - the environment to copy.
+ * @param dir - directory to put first.
+ * @param platform - process platform (test seam).
+ * @returns a new environment with one normalized, prepended PATH.
+ */
+export function withPrependedPath(
+  env: NodeJS.ProcessEnv,
+  dir: string,
+  platform: string = process.platform,
+): NodeJS.ProcessEnv {
+  const separator = platform === 'win32' ? ';' : ':'
+  const pathKeys = Object.keys(env).filter(key => key.toUpperCase() === 'PATH')
+  const current = pathKeys.map(key => env[key]).find(value => value !== undefined && value !== '') ?? ''
+  const next: NodeJS.ProcessEnv = {}
+  for (const [key, value] of Object.entries(env)) {
+    if (key.toUpperCase() !== 'PATH') next[key] = value
+  }
+  next.PATH = current === '' ? dir : `${dir}${separator}${current}`
+  return next
+}
+
+/**
+ * Spawn the dsh CLI with piped stdio and no shell parsing (see
+ * {@link dshSpawnCommand}).
+ *
+ * The CLI's own directory goes first on the child PATH: npm-global, homebrew and
+ * packaged layouts keep `node`, `pnpm` and `npx` beside the `dsh` shim, and a
+ * GUI-launched host carries none of them on its own PATH — the CLI forwards
+ * `dsh plugin` to pnpm, so without this the update would start and then fail on
+ * a missing pnpm instead. This mirrors the packaged Desktop launcher, which
+ * prepends its bundled runtime bin to the host it spawns.
+ * @param binary - the resolved dsh CLI path.
+ * @param args - arguments after the interpreter/script prefix.
+ * @param env - the host environment.
+ * @returns the spawned child process.
+ */
 export function spawnDsh(binary: string, args: string[], env: NodeJS.ProcessEnv) {
   const { command, argsPrefix } = dshSpawnCommand(binary)
+  const pathApi = process.platform === 'win32' ? win32 : posix
+  const childEnv = withPrependedPath(env, pathApi.dirname(binary))
   if (process.platform === 'win32' && command.toLowerCase().endsWith('.cmd')) {
     return spawn('cmd.exe', windowsCmdShimArgs(command, args), {
-      env,
+      env: childEnv,
       windowsVerbatimArguments: true,
       stdio: ['ignore', 'pipe', 'pipe'],
     })
   }
   return spawn(command, [...argsPrefix, ...args], {
-    env: command === process.execPath ? { ...env, ELECTRON_RUN_AS_NODE: '1' } : env,
+    env: command === process.execPath ? { ...childEnv, ELECTRON_RUN_AS_NODE: '1' } : childEnv,
     stdio: ['ignore', 'pipe', 'pipe'],
   })
 }
@@ -248,6 +351,26 @@ export async function detectOfficialChannels(
   return OFFICIAL_INSTALLER_PATTERN.test(output.read())
 }
 
+/**
+ * The official in-process plugin manager (`@deepseek-ai/dsh-plugin-manager`),
+ * read from the host context as a contract observation — not an import, exactly
+ * like the profile facts and the installer wire shapes this package already
+ * mirrors. It is the same writer the official Plugins page drives, and on an
+ * application-owned profile it is the ONLY writer: `dsh plugin --profile desktop
+ * …` is refused before pnpm starts ("profile \"desktop\" is managed
+ * exclusively by the Electron application"), and the launcher hands that
+ * manager its bundled package-manager invocation through launcher facts.
+ */
+export interface NativePluginManager {
+  /**
+   * Install or update one package spec through the official manager.
+   * @param spec - package spec (e.g. `@scope/pkg@1.2.3`).
+   * @param options - activation choice and the request id the run is tracked under.
+   * @returns the manager's own diagnostics (the caller re-reads the profile).
+   */
+  installBundle(spec: string, options?: { enabled?: boolean; requestId?: string }): Promise<unknown>
+}
+
 /** One layer snapshot plus the profile patch text and dependency list. */
 interface CapturedState {
   layer: LayerSnapshot
@@ -277,6 +400,8 @@ export class CliGateway {
     private readonly deps: {
       spawnImpl?: typeof spawnDsh
       findBinary?: (env: NodeJS.ProcessEnv) => string | null
+      /** The official in-process manager, when the runtime publishes one. */
+      nativeManager?: () => NativePluginManager | undefined
     } = {},
   ) {}
 
@@ -310,6 +435,20 @@ export class CliGateway {
   /** The dsh CLI path, through the test seam when present. */
   private binary(): string | null {
     return this.deps.findBinary !== undefined ? this.deps.findBinary(this.env) : findDshBinary(this.env)
+  }
+
+  /**
+   * The official in-process manager to write through, or undefined when the CLI
+   * is the writer. Only an application-owned profile (a packaged Desktop launch)
+   * takes this path: there the CLI refuses the profile outright, while the
+   * official manager — which the launcher configures with its bundled
+   * package-manager invocation — owns the same files this gateway reads. On
+   * every other runtime the CLI stays the single writer, exactly as before.
+   * @returns the manager, or undefined when the CLI should run.
+   */
+  private nativeManager(): NativePluginManager | undefined {
+    if (this.facts.desktop !== true) return undefined
+    return this.deps.nativeManager?.()
   }
 
   /** Run one CLI command to completion and return the bounded output. */
@@ -511,7 +650,12 @@ export class CliGateway {
     return { jobId: job.id }
   }
 
-  /** Start an in-place npm update; the caller polls {@link status}. */
+  /**
+   * Start an in-place npm update; the caller polls {@link status}. An
+   * application-owned profile runs it through the official in-process manager
+   * instead of the CLI (see {@link nativeManager}), and the job/status/polling
+   * contract the browser half drives is identical either way.
+   */
   update(id: string, version: string): { jobId: string } {
     const spec = `${id}@${version}`
     const job: GatewayJob = {
@@ -530,8 +674,71 @@ export class CliGateway {
       this.retainFinished(job.id)
       return { jobId: job.id }
     }
+    // An application-owned profile takes the official writer; everything else
+    // keeps the CLI, whose reconciliation guards this gateway compensates for.
+    const native = this.nativeManager()
+    if (native !== undefined) {
+      this.enqueueNativeUpdate(job, native)
+      return { jobId: job.id }
+    }
     this.enqueue(() => this.run(job, ['plugin', '--profile', this.facts.profileName, 'add', spec], ADD_TIMEOUT_MS))
     return { jobId: job.id }
+  }
+
+  /** Start an in-place update through the official in-process manager. */
+  private enqueueNativeUpdate(job: GatewayJob, native: NativePluginManager): void {
+    this.enqueue(async () => {
+      try {
+        await this.runNativeUpdate(job, native)
+      } catch (error) {
+        job.phase = 'error'
+        job.error = `plugin-manager: 官方插件管理器更新失败：${error instanceof Error ? error.message : String(error)}`
+      }
+      this.retainFinished(job.id)
+    })
+  }
+
+  /**
+   * Run one update through the official in-process manager (an application-owned
+   * profile, where the CLI refuses to write). The manager resolves the registry,
+   * runs pnpm with the launcher's bundled toolchain and applies the bundle, then
+   * this reads the profile the same way the CLI path does: the dependency must
+   * still be there and the installed version must be the one the route resolved,
+   * so a green manager call that changed nothing is still reported as a failure.
+   * @param job - the update job being settled.
+   * @param native - the official manager.
+   */
+  private async runNativeUpdate(job: GatewayJob, native: NativePluginManager): Promise<void> {
+    const targetId = job.targetId
+    const targetVersion = job.targetVersion
+    if (targetId === undefined || targetVersion === undefined) {
+      job.phase = 'error'
+      job.error = 'plugin-manager: update job is missing the target id or version'
+      return
+    }
+    const before = await this.capture()
+    await native.installBundle(job.spec, { enabled: true, requestId: job.id })
+    const after = await this.capture()
+    if (!after.dependencies.includes(targetId)) {
+      job.phase = 'error'
+      job.error = `plugin-manager: 官方插件管理器报告成功，但目标插件未保留在 profile 中（更新未生效）`
+      return
+    }
+    const manifest = await readProfileManifest(this.facts.packageJsonPath)
+    const updated = await buildPluginRow(this.facts, targetId, manifest.dependencies[targetId] ?? job.spec, after.layer.rows)
+    if (updated.version !== targetVersion) {
+      job.phase = 'error'
+      job.error = `plugin-manager: 官方插件管理器报告成功，但 ${targetId} 仍为 ${updated.version}，预期 ${targetVersion}（更新未生效）`
+      return
+    }
+    job.plugin = updated
+    job.conflicts = significantChanges(diffLayer(before.layer, after.layer)).map(change => ({
+      id: change.id,
+      name: change.id,
+      from: change.from,
+      to: change.to,
+    }))
+    job.phase = 'done'
   }
 
   /** Start a deterministic legacy aggregate migration. */
